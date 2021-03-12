@@ -16,7 +16,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-
     <!-- HIGH CHARTS IMPORTS -->
     <script src="http://code.highcharts.com/highcharts.js"></script>
     <script src="http://code.highcharts.com/highcharts-more.js"></script>
@@ -28,7 +27,8 @@
     $(document).ready(function(){
       {% for cp in currency_pairs.keys() %}
       $("#toggle_{{ cp }}").click(function(){
-        $("#row_{{ cp }}").toggle();
+        $("#row_{{ cp }}").toggle('slow');
+        $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
       });
       {% endfor %}
     });
@@ -89,7 +89,7 @@
             </h5>
             <div class="dropdown-menu">
               {% for cp, title in currency_pairs.items() %}
-              <a class="dropdown-item font-weight-lighter" id="toggle_{{ cp }}">{{ cp.upper() }} ({{ title }})</a>
+              <a class="dropdown-item font-weight-light" id="toggle_{{ cp }}">{{ cp.upper() }} ({{ title }})</a>
               {% endfor %}
             </div>
           </li>

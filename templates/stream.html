@@ -38,23 +38,29 @@
         function (result)
         {
           {% for cp in currency_pairs.keys() %}
-          chart_{{ cp }}.series[0].setData(result[0][{{ loop.index0 }}]);
-          var new_color = result[1][{{ loop.index0 }}][0].toString();
-          var most_current = result[1][{{ loop.index0 }}][1].toString();
-          var delta = result[1][{{ loop.index0 }}][2];
-          chart_{{ cp }}.series[0].update({
-            color: new_color,
-            lineColor: new_color
-          });
-          if (new_color=="red") {
+          chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
 
-            $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-danger").html("▼".concat(delta));
+          if (result.{{ cp }}.increasing) {
+            // CHANGE CHART
+            chart_{{ cp }}.series[0].update({
+              color: "green",
+              lineColor: "green"
+            });
+
+            // CHANGE CARD
+            $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-success").html("▼".concat(result.{{ cp }}.delta));
 
           } else {
+            // CHANGE CHART
+            chart_{{ cp }}.series[0].update({
+              color: "red",
+              lineColor: "red"
+            });
 
-            $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-success").html("▲".concat(delta));
+            // CHANGE CARD
+            $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-danger").html("▲".concat(result.{{ cp }}.delta));
           }
-          $('#current_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter pt-4").html(most_current);
+          $('#current_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter pt-4").html(result.{{ cp }}.last_val);
 
           {% endfor %}
         }
@@ -62,7 +68,7 @@
     }
 
     request_data();
-    var chartdata = setInterval(request_data, 5000)
+    var chartdata = setInterval(request_data, 10000)
 
     $(document).ready(
       function(){

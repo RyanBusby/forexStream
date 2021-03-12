@@ -1,10 +1,8 @@
 import os
 import json
 from datetime import datetime as dt
-from datetime import timedelta
-from time import mktime
 
-from flask import Flask, render_template, session, make_response
+from flask import Flask, render_template, session, make_response, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -66,9 +64,9 @@ class USDJPY(db.Model):
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
 data_handler = DataHandler(tables, db)
 
-@app.before_first_request
-def load_ticks():
-    session['latest_ts'] = data_handler.load_ticks()
+# @app.before_first_request
+# def load_ticks():
+#     data_handler.load_ticks()
 
 @app.route('/', methods=["GET","POST"])
 def index():
@@ -83,36 +81,10 @@ def data():
     # load_ticks will check db for latest date
     # then ask cgapi for ticks after that time stamp
     # irl database could be getting loaded all the time, but for this purpose only get data when someone is looking at it
+    # how about if two people are using the app , you now have two scrapers running.. it only makes sense as a demo
     data_handler.load_ticks()
-    table_rows = []
-    # if cutoff is a long time ago (24 hours) the browser get laggy
-    # one hour is still smooth
-    cutoff = dt.now() - timedelta(minutes=60)
-    for table in tables:
-        rows = table.query\
-            .filter(table.timestamp > cutoff)\
-            .order_by(table.timestamp)\
-            .all()
-        table_rows.append(rows)
-    highcharts_data = []
-    other_data = []
-    for table_data in table_rows:
-        l = []
-        for row in table_data:
-            l.append([mktime(row.timestamp.timetuple())*1000, row.rate])
-        highcharts_data.append(l)
-        first_val = l[0][1]
-        last_val = l[-1][1]
-        delta = abs(round(last_val - first_val, 5))
-        if first_val > last_val:
-            other_data.append(['red', last_val, delta])
-        else:
-            other_data.append(['green', last_val, delta])
-    response = [highcharts_data, other_data]
-
-    response = make_response(json.dumps(response))
-    response.content_type = 'application/json'
-    return response
+    response = data_handler.build_response()
+    return jsonify(response)
 '''
 @app.route('/risk')
 def risk():

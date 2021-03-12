@@ -2,6 +2,7 @@ import os
 import requests
 from datetime import datetime as dt
 from datetime import timedelta, timezone
+from time import mktime
 
 from market_dicts import market_ids, price_types
 
@@ -92,3 +93,28 @@ class DataHandler():
     	epoch = dt(1970, 1, 1, tzinfo=timezone.utc)
     	utc_dt = epoch + timedelta(milliseconds=wcf)
     	return utc_dt
+
+    def build_response(self, minutes=3):
+        cutoff = dt.now() - timedelta(minutes=minutes)
+        response = {}
+        for table in self.tables:
+            rows = table.query\
+                .filter(table.timestamp > cutoff)\
+                .order_by(table.timestamp)\
+                .all()
+            table_data = []
+            for row in rows:
+                table_data.append(
+                    [mktime(row.timestamp.timetuple())*1000, row.rate]
+                )
+            first_val = table_data[0][1]
+            last_val = table_data[-1][1]
+            delta = abs(round(last_val - first_val, 5))
+            increasing = last_val > first_val
+            response[table.__tablename__] = {
+                'data': table_data,
+                'last_val': last_val,
+                'delta': delta,
+                'increasing': increasing
+            }
+        return response
