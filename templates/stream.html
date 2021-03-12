@@ -13,10 +13,11 @@
       <div class="card-body">
         <h2 id="current_{{ cp }}" class="card-text"></h2>
         <h4 id="delta_{{ cp }}" class="card-text"></h4>
+        <p id="closed_{{ cp }}" class="card-text"></p>
       </div>
 
       <div class="card-footer text-center bg-light">
-        <h3 class="font-weight-lighter">{{ cp.upper() }}</h3>
+        <h3 id="footer_{{ cp }}" class="font-weight-lighter">{{ cp.upper() }}</h3>
       </div>
 
     </div>
@@ -40,7 +41,7 @@
           {% for cp in currency_pairs.keys() %}
           chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
 
-          if (result.{{ cp }}.increasing) {
+          if (result.{{ cp }}.increasing==1) {
             // CHANGE CHART
             chart_{{ cp }}.series[0].update({
               color: "green",
@@ -50,7 +51,7 @@
             // CHANGE CARD
             $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-success").html("▼".concat(result.{{ cp }}.delta));
 
-          } else {
+          } else if (result.{{ cp }}.increasing==0) {
             // CHANGE CHART
             chart_{{ cp }}.series[0].update({
               color: "red",
@@ -60,6 +61,21 @@
             // CHANGE CARD
             $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-danger").html("▲".concat(result.{{ cp }}.delta));
           }
+
+          else {
+            //CHANGE CARD
+            $('#closed_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-secondary").html("Forex Trading is available 24 hours a day from 5:00pm ET Sunday through 5:00pm ET on Friday");
+            $('#footer_{{ cp }}').html("");
+            clearInterval(chartdata);
+          // CAN AUTOMATICALLY RELOAD WHEN MARKET OPENS
+          //   setInterval( function(){
+          //     var hour = new Date().getHours();
+          //     if (hour >= 9 && hour < 18) {
+          //         do_this();
+          //     }
+          // } , 1000*60);
+          }
+
           $('#current_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter pt-4").html(result.{{ cp }}.last_val);
 
           {% endfor %}

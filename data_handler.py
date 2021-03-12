@@ -7,13 +7,19 @@ from time import mktime
 from market_dicts import market_ids, price_types
 
 class DataHandler():
+    '''
+    DataHandler queries the cgapi then inserts results into db.
+    It also queries the db and builds response objects.
+    '''
     def __init__(self, tables, db):
-        pword = os.getenv('cg_pword')
+        self.pword = os.getenv('upass')
         self.base = 'https://ciapi.cityindex.com/TradingAPI'
         self.appkey = os.getenv('cg_api')
         self.user = os.getenv('cg_uname')
-        self.session = self.get_session_id(pword)
+        self.session = self.get_session_id(self.pword)
         self.tables = tables
+        # self.tick_tables = tick_tables
+        # self.ohlc_tables = ohlc_tables
         self.db = db
 
     def get_session_id(self, pword):
@@ -47,7 +53,21 @@ class DataHandler():
         url = f'{self.base}/{target}/{uri}'
         r = requests.get(url, params=payload)
         ticks = r.json()
-        return ticks['PriceTicks']
+        return ticks, r.status_code
+
+    def check_error(self, response, status_code):
+        # make this better
+        if status_code != 200 and 'ErrorCode' in ticks:
+            if ticks['ErrorCode'] == 4011:
+                self.session = get_session_id(self.pword)
+                # print('new session id requested')
+                return
+            else:
+                raise Exception(ticks)
+        elif status_code == 200:
+            return
+        else:
+            raise Exception(ticks)
 
     def load_ticks(self):
         cutoff = dt.now() - timedelta(minutes=15)
@@ -58,34 +78,35 @@ class DataHandler():
             while True:
                 latest_ts = table.query\
                 .order_by(table.timestamp.desc()).first().timestamp
+
+
                 if latest_ts < cutoff:
                     l_ts = int(cutoff.timestamp())
-                    ticks = self.get_ticks_after(
-                        market_id,
-                        l_ts,
-                        price_type
-                    )
                 else:
                     l_ts = int(latest_ts.timestamp())
-                    ticks = self.get_ticks_after(
-                        market_id,
-                        l_ts,
-                        price_type
-                    )
+                ticks, status_code = self.get_ticks_after(
+                    market_id,
+                    l_ts,
+                    price_type
+                )
+                # if session_id is invalid, get new and try again
+                self.check_error(ticks, status_code)
                 rows = [
                     table(
                         timestamp=self.convert_wcf(
                             int(tick['TickDate'][6:-2])
                         ),
                         rate=tick['Price']
-                    ) for tick in ticks
+                    ) for tick in ticks['PriceTicks']
                 ]
-                self.db.session.add_all(rows)
-                self.db.session.commit()
-                if len(rows) < 4000 and len(rows) > 0:
+                if len(rows) == 4000:
+                    self.db.session.add_all(rows)
+                    self.db.session.commit()
+                elif len(rows) < 4000 and len(rows) > 0:
+                    self.db.session.add_all(rows)
+                    self.db.session.commit()
                     break
                 elif len(rows) == 0:
-                    # this will break app, do some error handling
                     break
         return
 
@@ -107,14 +128,22 @@ class DataHandler():
                 table_data.append(
                     [mktime(row.timestamp.timetuple())*1000, row.rate]
                 )
-            first_val = table_data[0][1]
-            last_val = table_data[-1][1]
-            delta = abs(round(last_val - first_val, 5))
-            increasing = last_val > first_val
-            response[table.__tablename__] = {
-                'data': table_data,
-                'last_val': last_val,
-                'delta': delta,
-                'increasing': increasing
-            }
+            if len(rows) > 1:
+                first_val = table_data[0][1]
+                last_val = table_data[-1][1]
+                delta = abs(round(last_val - first_val, 5))
+                increasing = int(last_val > first_val)
+                response[table.__tablename__] = {
+                    'data': table_data,
+                    'last_val': last_val,
+                    'delta': delta,
+                    'increasing': increasing
+                }
+            else:
+                response[table.__tablename__] = {
+                    'data': None,
+                    'last_val': None,
+                    'delta': None,
+                    'increasing': None
+                }
         return response
