@@ -81,3 +81,7 @@ def data():
     cutoff = data_handler.load_ticks()
     response = data_handler.build_response(cutoff)
     return jsonify(response)
+
+@app.route('/new_tab')
+def new_tab():
+    return render_template('new_tab.html')

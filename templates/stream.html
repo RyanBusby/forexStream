@@ -99,7 +99,22 @@
   var chartdata = setInterval(request_data, 10000)
 
   $(document).ready(
+
     function(){
+
+      {% if request.path == '/stream' %}
+
+        {% for cp in currency_pairs.keys() %}
+
+        $("#toggle_{{ cp }}").click(function(){
+          $("#row_{{ cp }}").toggle('slow');
+          $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
+        });
+
+        {% endfor %}
+
+      {% endif %}
+
       // what tz should view be in?
       const timezone = new Date().getTimezoneOffset()
       Highcharts.setOptions({
