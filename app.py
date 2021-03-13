@@ -64,7 +64,7 @@ class USDJPY(db.Model):
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
 data_handler = DataHandler(tables, db)
 
-@app.route('/', methods=["GET","POST"])
+@app.route('/')
 def index():
     cps = {
         table.__tablename__: title_dict[table.__tablename__]
@@ -72,7 +72,7 @@ def index():
     }
     return render_template('stream.html', currency_pairs=cps)
 
-@app.route('/data', methods=['GET','POST'])
+@app.route('/data')
 def data():
     cutoff = data_handler.load_ticks()
     response = data_handler.build_response(cutoff)

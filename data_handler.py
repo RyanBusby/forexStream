@@ -171,7 +171,7 @@ class DataHandler():
                 'delta': delta,
                 'increasing': increasing,
             }
-        response['closed'] = not _closed
+        response['closed'] = _closed
         return response
 
 
