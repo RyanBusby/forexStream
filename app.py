@@ -64,10 +64,6 @@ class USDJPY(db.Model):
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
 data_handler = DataHandler(tables, db)
 
-# @app.before_first_request
-# def load_ticks():
-#     data_handler.load_ticks()
-
 @app.route('/', methods=["GET","POST"])
 def index():
     cps = {
@@ -78,19 +74,11 @@ def index():
 
 @app.route('/data', methods=['GET','POST'])
 def data():
-    # load_ticks will check db for latest date
-    # then ask cgapi for ticks after that time stamp
-    # irl database could be getting loaded all the time, but for this purpose only get data when someone is looking at it
-    # how about if two people are using the app , you now have two scrapers running.. it only makes sense as a demo
     data_handler.load_ticks()
     response = data_handler.build_response()
     return jsonify(response)
-'''
-@app.route('/risk')
-def risk():
-    return render_template('risk.html', risk=True)
 
-@app.route('/returns')
-def returns():
-    return render_template('returns.html', returns=True)
-'''
+@app.route('/closed')
+def closed():
+    # response = data_hander.build_closed_response()
+    return render_template('closed.html')

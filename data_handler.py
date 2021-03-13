@@ -11,7 +11,7 @@ class DataHandler():
     DataHandler queries the cgapi then inserts results into db.
     It also queries the db and builds response objects.
     '''
-    def __init__(self, tables, db):
+    def __init__(self, tables, db, minutes=60):
         self.pword = os.getenv('upass')
         self.base = 'https://ciapi.cityindex.com/TradingAPI'
         self.appkey = os.getenv('cg_api')
@@ -21,6 +21,7 @@ class DataHandler():
         # self.tick_tables = tick_tables
         # self.ohlc_tables = ohlc_tables
         self.db = db
+        self.cutoff = dt.now() - timedelta(minutes=60)
 
     def get_session_id(self, pword):
         '''
@@ -70,7 +71,6 @@ class DataHandler():
             raise Exception(ticks)
 
     def load_ticks(self):
-        cutoff = dt.now() - timedelta(minutes=15)
         for table in self.tables:
             tname = table.__tablename__
             market_id = market_ids[tname]
@@ -78,10 +78,8 @@ class DataHandler():
             while True:
                 latest_ts = table.query\
                 .order_by(table.timestamp.desc()).first().timestamp
-
-
-                if latest_ts < cutoff:
-                    l_ts = int(cutoff.timestamp())
+                if latest_ts < self.cutoff:
+                    l_ts = int(self.cutoff.timestamp())
                 else:
                     l_ts = int(latest_ts.timestamp())
                 ticks, status_code = self.get_ticks_after(
@@ -115,12 +113,11 @@ class DataHandler():
     	utc_dt = epoch + timedelta(milliseconds=wcf)
     	return utc_dt
 
-    def build_response(self, minutes=3):
-        cutoff = dt.now() - timedelta(minutes=minutes)
+    def build_response(self):
         response = {}
         for table in self.tables:
             rows = table.query\
-                .filter(table.timestamp > cutoff)\
+                .filter(table.timestamp > self.cutoff)\
                 .order_by(table.timestamp)\
                 .all()
             table_data = []
@@ -132,7 +129,7 @@ class DataHandler():
                 first_val = table_data[0][1]
                 last_val = table_data[-1][1]
                 delta = abs(round(last_val - first_val, 5))
-                increasing = int(last_val > first_val)
+                increasing = last_val > first_val
                 response[table.__tablename__] = {
                     'data': table_data,
                     'last_val': last_val,
@@ -140,10 +137,5 @@ class DataHandler():
                     'increasing': increasing
                 }
             else:
-                response[table.__tablename__] = {
-                    'data': None,
-                    'last_val': None,
-                    'delta': None,
-                    'increasing': None
-                }
+                return None
         return response

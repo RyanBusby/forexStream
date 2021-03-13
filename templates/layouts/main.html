@@ -23,7 +23,9 @@
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
+    {% if request.path == '/' %}
     <script>
+
     $(document).ready(function(){
       {% for cp in currency_pairs.keys() %}
       $("#toggle_{{ cp }}").click(function(){
@@ -32,7 +34,8 @@
       });
       {% endfor %}
     });
-</script>
+  </script>
+  {% endif %}
 
   </head>
   <body>
@@ -59,7 +62,7 @@
             </small>
           </h1>
         </a> -->
-
+        {% if request.path == '/' %}
         <ul class="navbar-nav">
 {#
           <li class="nav-item">
@@ -95,6 +98,7 @@
           </li>
 
         </ul>
+      {% endif %}
 
     </nav>
 

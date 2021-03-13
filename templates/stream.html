@@ -3,8 +3,7 @@
 💱 forex
 {% endblock %}
 {% block content %}
-
-  {% for cp in currency_pairs.keys() %}
+{% for cp in currency_pairs.keys() %}
 
   <div id="row_{{ cp }}" class="row pl-3 pb-3">
 
@@ -25,153 +24,160 @@
     <div id="{{ cp }}" class="col-10"></div>
   </div>
 
+{% endfor %}
+<script type="text/javascript">
+
+  {% for cp in currency_pairs.keys() %}
+    var chart_{{ cp }};
   {% endfor %}
-  <script type="text/javascript">
 
-    {% for cp in currency_pairs.keys() %}
-      var chart_{{ cp }};
-    {% endfor %}
+  var card_class_dict = {
+    true: {
+      "card_class":"card-text text-center font-weight-lighter text-success",
+      "new_color": "green",
+      "arrow": "▲"
+    },
+    false: {
+      "card_class":"card-text text-center font-weight-lighter text-danger",
+      "new_color": "red",
+      "arrow": "▼"
+    }
+  }
 
-    function request_data(){
-      console.log('request new data')
-      var requests = $.get('/data');
-      var tm = requests.done(
-        function (result)
-        {
+  function request_data() {
+    var requests = $.get('/data');
+    requests.done(
+      function (result) {
+        if (result==undefined) {
+          window.location.href = "{{ url_for('closed' )}}";
+        } else {
+
           {% for cp in currency_pairs.keys() %}
-          chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
 
-          if (result.{{ cp }}.increasing==1) {
-            // CHANGE CHART
+            var formats = card_class_dict[result.{{ cp }}.increasing];
+
+            // UPDATE CHART DATA
+            chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
+
+            // UPDATE CHART PROPERTIES
             chart_{{ cp }}.series[0].update({
-              color: "green",
-              lineColor: "green"
+              color: formats["new_color"],
+              lineColor: formats["new_color"]
             });
 
-            // CHANGE CARD
-            $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-success").html("▼".concat(result.{{ cp }}.delta));
+            // UPDATE CARD
+            $('#delta_{{ cp }}')
+              .removeClass()
+              .addClass(
+                formats['card_class']
+              )
+              .html(
+                formats["arrow"].concat(result.{{ cp }}.delta)
+              );
 
-          } else if (result.{{ cp }}.increasing==0) {
-            // CHANGE CHART
-            chart_{{ cp }}.series[0].update({
-              color: "red",
-              lineColor: "red"
-            });
-
-            // CHANGE CARD
-            $('#delta_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-danger").html("▲".concat(result.{{ cp }}.delta));
-          }
-
-          else {
-            //CHANGE CARD
-            $('#closed_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter text-secondary").html("Forex Trading is available 24 hours a day from 5:00pm ET Sunday through 5:00pm ET on Friday");
-            $('#footer_{{ cp }}').html("");
-            clearInterval(chartdata);
-          // CAN AUTOMATICALLY RELOAD WHEN MARKET OPENS
-          //   setInterval( function(){
-          //     var hour = new Date().getHours();
-          //     if (hour >= 9 && hour < 18) {
-          //         do_this();
-          //     }
-          // } , 1000*60);
-          }
-
-          $('#current_{{ cp }}').removeClass().addClass("card-text text-center font-weight-lighter pt-4").html(result.{{ cp }}.last_val);
+            $('#current_{{ cp }}')
+              .removeClass()
+              .addClass(
+                "card-text text-center font-weight-lighter pt-4"
+              )
+              .html(
+                result.{{ cp }}.last_val
+              );
 
           {% endfor %}
         }
-      );
-    }
-
-    request_data();
-    var chartdata = setInterval(request_data, 10000)
-
-    $(document).ready(
-      function(){
-        const timezone = new Date().getTimezoneOffset()
-        Highcharts.setOptions({
-          global: {
-            timezoneOffset: timezone
-          }
-        }
-      );
-      {% for cp in currency_pairs.keys() %}
-      chart_{{ cp }} = new Highcharts.Chart(
-        {
-          chart: {
-            height: 230,
-            backgroundColor: '#f8f9fa',
-            type:'line',
-            animation: true,
-            marginRight: 10,
-            renderTo: '{{ cp }}'
-          },
-
-
-          tooltip: {
-            xDateFormat: '%A, %b %e, %l:%M:%S %P',
-            backgroundColor: '#343a40',
-            style: {
-              color: 'white'
-            }
-          },
-
-          title: {
-            text: undefined
-          },
-
-          xAxis: {
-            type: 'datetime',
-            labels: {
-              formatter: function() {
-                return Highcharts.dateFormat('%l:%M:%S %P', this.value);
-              },
-              style: {
-                fontSize: 8
-              }
-            }
-          },
-
-          yAxis: {
-            title: {
-              text: undefined,
-            },
-            gridLineColor: 'darkgray',
-            gridLineWidth: .5,
-            labels: {
-              enabled: true,
-              style: {
-                fontSize: 10
-              }
-            }
-          },
-          legend: {
-            enabled: false
-          },
-          plotOptions: {
-            series: {
-              marker: {
-                enabled: false
-              }
-            }
-          },
-
-          series: [
-            {
-              lineWidth: 1,
-              name: '{{ cp.upper() }}',
-              allowPointSelect: true,
-              data: [],
-              marker: {
-                enabled: false
-              },
-            }
-          ]
-        }
-      );
-      {% endfor %}
       }
     );
+  }
 
-  </script>
+  request_data();
+  var chartdata = setInterval(request_data, 10000)
+
+  $(document).ready(
+    function(){
+      const timezone = new Date().getTimezoneOffset()
+      Highcharts.setOptions({
+        global: {
+          timezoneOffset: timezone
+        }
+      }
+    );
+    {% for cp in currency_pairs.keys() %}
+    chart_{{ cp }} = new Highcharts.Chart(
+      {
+        chart: {
+          height: 230,
+          backgroundColor: '#f8f9fa',
+          type:'line',
+          animation: true,
+          marginRight: 10,
+          renderTo: '{{ cp }}'
+        },
+
+
+        tooltip: {
+          xDateFormat: '%A, %b %e, %l:%M:%S %P',
+          backgroundColor: '#343a40',
+          style: {
+            color: 'white'
+          }
+        },
+
+        title: {
+          text: undefined
+        },
+
+        xAxis: {
+          type: 'datetime',
+          labels: {
+            formatter: function() {
+              return Highcharts.dateFormat('%l:%M:%S %P', this.value);
+            },
+            style: {
+              fontSize: 8
+            }
+          }
+        },
+
+        yAxis: {
+          title: {
+            text: undefined,
+          },
+          gridLineColor: 'darkgray',
+          gridLineWidth: .5,
+          labels: {
+            enabled: true,
+            style: {
+              fontSize: 10
+            }
+          }
+        },
+        legend: {
+          enabled: false
+        },
+        plotOptions: {
+          series: {
+            marker: {
+              enabled: false
+            }
+          }
+        },
+
+        series: [
+          {
+            lineWidth: 1,
+            name: '{{ cp.upper() }}',
+            allowPointSelect: true,
+            data: [],
+            marker: {
+              enabled: false
+            },
+          }
+        ]
+      }
+    );
+    {% endfor %}
+    }
+  );
+</script>
 {% endblock %}
