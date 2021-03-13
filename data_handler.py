@@ -21,7 +21,7 @@ class DataHandler():
         # self.tick_tables = tick_tables
         # self.ohlc_tables = ohlc_tables
         self.db = db
-        self.cutoff = dt.now() - timedelta(minutes=60)
+        self.minutes = minutes
 
     def get_session_id(self, pword):
         '''
@@ -71,6 +71,7 @@ class DataHandler():
             raise Exception(ticks)
 
     def load_ticks(self):
+        cutoff = dt.now() - timedelta(minutes=self.minutes)
         for table in self.tables:
             tname = table.__tablename__
             market_id = market_ids[tname]
@@ -78,8 +79,8 @@ class DataHandler():
             while True:
                 latest_ts = table.query\
                 .order_by(table.timestamp.desc()).first().timestamp
-                if latest_ts < self.cutoff:
-                    l_ts = int(self.cutoff.timestamp())
+                if latest_ts < cutoff:
+                    l_ts = int(cutoff.timestamp())
                 else:
                     l_ts = int(latest_ts.timestamp())
                 ticks, status_code = self.get_ticks_after(
@@ -106,18 +107,18 @@ class DataHandler():
                     break
                 elif len(rows) == 0:
                     break
-        return
+        return cutoff
 
     def convert_wcf(self, wcf):
     	epoch = dt(1970, 1, 1, tzinfo=timezone.utc)
     	utc_dt = epoch + timedelta(milliseconds=wcf)
     	return utc_dt
 
-    def build_response(self):
+    def build_response(self, cutoff):
         response = {}
         for table in self.tables:
             rows = table.query\
-                .filter(table.timestamp > self.cutoff)\
+                .filter(table.timestamp > cutoff)\
                 .order_by(table.timestamp)\
                 .all()
             table_data = []

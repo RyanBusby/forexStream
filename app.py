@@ -74,8 +74,8 @@ def index():
 
 @app.route('/data', methods=['GET','POST'])
 def data():
-    data_handler.load_ticks()
-    response = data_handler.build_response()
+    cutoff = data_handler.load_ticks()
+    response = data_handler.build_response(cutoff)
     return jsonify(response)
 
 @app.route('/closed')
