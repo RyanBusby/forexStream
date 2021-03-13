@@ -50,6 +50,7 @@
     requests.done(
       function (result) {
         if (result.closed) {
+          console.log('martket closed')
           clearInterval(chartdata);
           $("#alert")
           .removeClass()
