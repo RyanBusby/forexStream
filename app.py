@@ -64,8 +64,12 @@ class USDJPY(db.Model):
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
 data_handler = DataHandler(tables, db)
 
-@app.route('/', methods=["GET","POST"])
+@app.route('/')
 def index():
+    return render_template('index.html')
+
+@app.route('/stream', methods=["GET","POST"])
+def stream():
     cps = {
         table.__tablename__: title_dict[table.__tablename__]
         for table in tables
