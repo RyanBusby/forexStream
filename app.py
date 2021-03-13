@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime as dt
 
-from flask import Flask, render_template, session, make_response, jsonify, flash
+from flask import Flask, render_template, session, make_response, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -70,7 +70,6 @@ def index():
         table.__tablename__: title_dict[table.__tablename__]
         for table in tables
     }
-    flash('Forex Trading is available 24 hours a day from 5:00pm ET Sunday through 5:00pm ET on Friday. Charts aren\'t live.', 'danger')
     return render_template('stream.html', currency_pairs=cps)
 
 @app.route('/data', methods=['GET','POST'])
@@ -78,8 +77,3 @@ def data():
     cutoff = data_handler.load_ticks()
     response = data_handler.build_response(cutoff)
     return jsonify(response)
-
-@app.route('/closed')
-def closed():
-    # response = data_hander.build_closed_response()
-    return render_template('closed.html')

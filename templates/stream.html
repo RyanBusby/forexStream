@@ -3,7 +3,7 @@
 💱 forex
 {% endblock %}
 {% block content %}
-<div id="alert" class="alert" role="alert"></div>
+<div id="alert"></div>
 {% for cp in currency_pairs.keys() %}
 
   <div id="row_{{ cp }}" class="row pl-3 pb-3">
@@ -51,18 +51,11 @@
       function (result) {
         if (result.closed) {
           clearInterval(chartdata);
-          {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for cat, msg in messages %}
-                $("#alert")
-                .removeClass()
-                .addClass("alert alert-{{  cat }} font-weight-light")
-                .html("{{  msg }}")
-                .show();
-              {% endfor %}
-            {% endif %}
-          {% endwith %}
-          // window.location.href = "{{ url_for('closed' )}}";
+          $("#alert")
+          .removeClass()
+          .addClass("alert alert-danger font-weight-light")
+          .html("Forex Trading is available 24 hours a day from 5:00pm ET Sunday through 5:00pm ET on Friday. Charts aren\'t live.")
+          .show();
         }
 
         {% for cp in currency_pairs.keys() %}

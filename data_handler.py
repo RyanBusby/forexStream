@@ -43,6 +43,7 @@ class DataHandler():
         return s
 
     def get_ticks_after(self, market_id, latest_ts, price_type):
+        # add log to verify not double scraping
         target = 'market'
         uri = f'{market_id}/tickhistoryafter'
         payload = {
@@ -83,8 +84,7 @@ class DataHandler():
 
     def load_ticks(self):
         # check if market is open
-        # if its closed - make sure db is loaded up to close
-        # setting cutoff when market is closed
+        # if its closed - make sure db is loaded up until close
         # if lastest_ts from db is 15 min after cutoff - don't scrape
         now = dt.now().replace(microsecond=0)
         is_closed = self.closed(now)
@@ -171,7 +171,7 @@ class DataHandler():
                 'delta': delta,
                 'increasing': increasing,
             }
-        response['closed'] = _closed
+        response['closed'] = not _closed
         return response
 
 
