@@ -3,6 +3,7 @@
 💱 forex
 {% endblock %}
 {% block content %}
+<div id="alert" class="alert" role="alert"></div>
 {% for cp in currency_pairs.keys() %}
 
   <div id="row_{{ cp }}" class="row pl-3 pb-3">
@@ -26,7 +27,7 @@
 
 {% endfor %}
 <script type="text/javascript">
-
+  $("#alert").hide();
   {% for cp in currency_pairs.keys() %}
     var chart_{{ cp }};
   {% endfor %}
@@ -48,44 +49,55 @@
     var requests = $.get('/data');
     requests.done(
       function (result) {
-        if (result==undefined) {
-          window.location.href = "{{ url_for('closed' )}}";
-        } else {
-
-          {% for cp in currency_pairs.keys() %}
-
-            var formats = card_class_dict[result.{{ cp }}.increasing];
-
-            // UPDATE CHART DATA
-            chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
-
-            // UPDATE CHART PROPERTIES
-            chart_{{ cp }}.series[0].update({
-              color: formats["new_color"],
-              lineColor: formats["new_color"]
-            });
-
-            // UPDATE CARD
-            $('#delta_{{ cp }}')
-              .removeClass()
-              .addClass(
-                formats['card_class']
-              )
-              .html(
-                formats["arrow"].concat(result.{{ cp }}.delta)
-              );
-
-            $('#current_{{ cp }}')
-              .removeClass()
-              .addClass(
-                "card-text text-center font-weight-lighter pt-4"
-              )
-              .html(
-                result.{{ cp }}.last_val
-              );
-
-          {% endfor %}
+        if (result.closed) {
+          clearInterval(chartdata);
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for cat, msg in messages %}
+                $("#alert")
+                .removeClass()
+                .addClass("alert alert-{{  cat }} font-weight-light")
+                .html("{{  msg }}")
+                .show();
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+          // window.location.href = "{{ url_for('closed' )}}";
         }
+
+        {% for cp in currency_pairs.keys() %}
+
+          var formats = card_class_dict[result.{{ cp }}.increasing];
+
+          // UPDATE CHART DATA
+          chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
+
+          // UPDATE CHART PROPERTIES
+          chart_{{ cp }}.series[0].update({
+            color: formats["new_color"],
+            lineColor: formats["new_color"]
+          });
+
+          // UPDATE CARD
+          $('#delta_{{ cp }}')
+            .removeClass()
+            .addClass(
+              formats['card_class']
+            )
+            .html(
+              formats["arrow"].concat(result.{{ cp }}.delta)
+            );
+
+          $('#current_{{ cp }}')
+            .removeClass()
+            .addClass(
+              "card-text text-center font-weight-lighter pt-4"
+            )
+            .html(
+              result.{{ cp }}.last_val
+            );
+
+        {% endfor %}
       }
     );
   }
@@ -95,6 +107,7 @@
 
   $(document).ready(
     function(){
+      // what tz should view be in?
       const timezone = new Date().getTimezoneOffset()
       Highcharts.setOptions({
         global: {
