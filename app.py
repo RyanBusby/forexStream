@@ -76,13 +76,8 @@ def stream():
     }
     return render_template('stream.html', currency_pairs=cps)
 
-@app.route('/data', methods=['GET','POST'])
+@app.route('/data')
 def data():
-    data_handler.load_ticks()
-    response = data_handler.build_response()
+    cutoff = data_handler.load_ticks()
+    response = data_handler.build_response(cutoff)
     return jsonify(response)
-
-@app.route('/closed')
-def closed():
-    # response = data_hander.build_closed_response()
-    return render_template('closed.html')

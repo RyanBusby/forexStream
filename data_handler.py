@@ -2,6 +2,7 @@ import os
 import requests
 from datetime import datetime as dt
 from datetime import timedelta, timezone
+from dateutil.relativedelta import relativedelta, FR
 from time import mktime
 
 from market_dicts import market_ids, price_types
@@ -11,7 +12,7 @@ class DataHandler():
     DataHandler queries the cgapi then inserts results into db.
     It also queries the db and builds response objects.
     '''
-    def __init__(self, tables, db, minutes=60):
+    def __init__(self, tables, db, minutes=30):
         self.pword = os.getenv('upass')
         self.base = 'https://ciapi.cityindex.com/TradingAPI'
         self.appkey = os.getenv('cg_api')
@@ -21,7 +22,7 @@ class DataHandler():
         # self.tick_tables = tick_tables
         # self.ohlc_tables = ohlc_tables
         self.db = db
-        self.cutoff = dt.now() - timedelta(minutes=60)
+        self.minutes = minutes
 
     def get_session_id(self, pword):
         '''
@@ -42,6 +43,7 @@ class DataHandler():
         return s
 
     def get_ticks_after(self, market_id, latest_ts, price_type):
+        # add log to verify not double scraping
         target = 'market'
         uri = f'{market_id}/tickhistoryafter'
         payload = {
@@ -70,18 +72,44 @@ class DataHandler():
         else:
             raise Exception(ticks)
 
+    def db_is_current(self, table, cutoff):
+        self.last_ts = cutoff+timedelta(minutes=self.minutes)
+        latest_ts = table.query\
+            .order_by(table.timestamp.desc())\
+            .first().timestamp.replace(microsecond=0)
+        if latest_ts >= self.last_ts:
+            return True, latest_ts
+        else:
+            return False, latest_ts
+
     def load_ticks(self):
+        # check if market is open
+        # if its closed - make sure db is loaded up until close
+        # if lastest_ts from db is 15 min after cutoff - don't scrape
+        now = dt.now().replace(microsecond=0)
+        is_closed = self.closed(now)
+        if is_closed:
+            m = int(59 - self.minutes)
+            cutoff = (now + relativedelta(weekday=FR(-1)))\
+                .replace(hour=14, minute=m, second=55)
+        else:
+            cutoff = now - timedelta(minutes=self.minutes)
         for table in self.tables:
             tname = table.__tablename__
             market_id = market_ids[tname]
             price_type = price_types[tname]
             while True:
-                latest_ts = table.query\
-                .order_by(table.timestamp.desc()).first().timestamp
-                if latest_ts < self.cutoff:
-                    l_ts = int(self.cutoff.timestamp())
-                else:
+                # if latest_ts >= now: don't scrape
+                # elif cutoff < latest_ts < now: scrape from latest_ts
+                # elif latest_ts < cutoff : scrape from cutoff
+                is_current, latest_ts = self.db_is_current(table, cutoff)
+                if is_current:
+                    break
+                # leave while loop, continue for loop
+                if cutoff < latest_ts < now:
                     l_ts = int(latest_ts.timestamp())
+                elif latest_ts < cutoff:
+                    l_ts = int(cutoff.timestamp())
                 ticks, status_code = self.get_ticks_after(
                     market_id,
                     l_ts,
@@ -106,18 +134,21 @@ class DataHandler():
                     break
                 elif len(rows) == 0:
                     break
-        return
+        return cutoff
 
     def convert_wcf(self, wcf):
     	epoch = dt(1970, 1, 1, tzinfo=timezone.utc)
     	utc_dt = epoch + timedelta(milliseconds=wcf)
     	return utc_dt
 
-    def build_response(self):
+    def build_response(self, cutoff):
         response = {}
+        _closed = False
+        if self.closed(dt.now()):
+            _closed = True
         for table in self.tables:
             rows = table.query\
-                .filter(table.timestamp > self.cutoff)\
+                .filter(table.timestamp > cutoff)\
                 .order_by(table.timestamp)\
                 .all()
             table_data = []
@@ -125,17 +156,29 @@ class DataHandler():
                 table_data.append(
                     [mktime(row.timestamp.timetuple())*1000, row.rate]
                 )
-            if len(rows) > 1:
-                first_val = table_data[0][1]
-                last_val = table_data[-1][1]
-                delta = abs(round(last_val - first_val, 5))
-                increasing = last_val > first_val
-                response[table.__tablename__] = {
-                    'data': table_data,
-                    'last_val': last_val,
-                    'delta': delta,
-                    'increasing': increasing
-                }
-            else:
-                return None
+            first_val = table_data[0][1]
+            last_val = table_data[-1][1]
+            delta = abs(round(last_val - first_val, 5))
+            increasing = last_val > first_val
+            if _closed:
+                five_after = self.last_ts+timedelta(minutes=5)
+                table_data.append(
+                    [mktime(five_after.timetuple())*1000, last_val]
+                )
+            response[table.__tablename__] = {
+                'data': table_data,
+                'last_val': last_val,
+                'delta': delta,
+                'increasing': increasing,
+            }
+        response['closed'] = _closed
         return response
+
+
+    def closed(self, now):
+        # this is specific to mst.. fix to work anywhere
+    	return (
+        	(now.weekday() == 4 and now.time() >= dt.time(21,1))\
+        	| (now.weekday() == 5) \
+        	| (now.weekday() == 6 and now.time() < dt.time(21))
+        )
