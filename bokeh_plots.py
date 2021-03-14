@@ -84,9 +84,16 @@ class BokehPlots():
             )
             plot.xaxis.formatter = formatters.DatetimeTickFormatter(
                 days="%m/%d",
-                hours="%H %Z",
-                minutes="%l:%M %P"
+                hours = "%l:%M %P",
+                hourmin = "%l:%M %P",
+                minutes="%l:%M %P",
+                minsec="%l:%M:%S %P",
+                seconds="%l:%M:%S %P",
+                microseconds="%l:%M:%S:%f %P",
+                milliseconds="%l:%M:%S:%f %P"
+
             )
+            plot.xaxis.axis_label = "UTC"
             plot.add_tools(hover_tool)
             plots[tname] = plot
             deltas[tname] = delta
