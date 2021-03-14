@@ -1,4 +1,4 @@
-from datetime import datetime as dt
+import datetime as dt
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta, FR
 
@@ -22,7 +22,7 @@ class BokehPlots():
         )
 
     def get_plots(self):
-        now = dt.now().replace(microsecond=0)
+        now = dt.datetime.utcnow().replace(microsecond=0)
         is_closed = self.closed(now)
         if is_closed:
             m = int(59 - self.minutes)

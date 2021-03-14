@@ -1,6 +1,6 @@
 import os
 import requests
-from datetime import datetime as dt
+import datetime as dt
 from datetime import timedelta, timezone
 from dateutil.relativedelta import relativedelta, FR
 from time import mktime
@@ -86,8 +86,9 @@ class DataHandler():
         # check if market is open
         # if its closed - make sure db is loaded up until close
         # if lastest_ts from db is 15 min after cutoff - don't scrape
-        now = dt.now().replace(microsecond=0)
+        now = dt.datetime.utcnow().replace(microsecond=0)
         is_closed = self.closed(now)
+        #
         if is_closed:
             m = int(59 - self.minutes)
             cutoff = (now + relativedelta(weekday=FR(-1)))\
@@ -144,7 +145,7 @@ class DataHandler():
     def build_response(self, cutoff):
         response = {}
         _closed = False
-        if self.closed(dt.now()):
+        if self.closed(dt.datetime.utcnow()):
             _closed = True
         for table in self.tables:
             rows = table.query\
