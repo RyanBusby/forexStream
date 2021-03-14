@@ -63,18 +63,25 @@ class USDJPY(db.Model):
 
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
 data_handler = DataHandler(tables, db)
-
+cps = {
+    table.__tablename__: title_dict[table.__tablename__]
+    for table in tables
+}
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/stream', methods=["GET","POST"])
-def stream():
+@app.route('/stream/<string:choice>', methods=["GET","POST"])
+def stream(choice):
     cps = {
         table.__tablename__: title_dict[table.__tablename__]
         for table in tables
     }
-    return render_template('stream.html', currency_pairs=cps)
+    if choice == 'bokeh':
+        return render_template('bokeh.html', currency_pairs=cps)
+    elif choice == 'highcharts':
+        return render_template('highcharts.html', currency_pairs=cps)
+
 
 @app.route('/data')
 def data():

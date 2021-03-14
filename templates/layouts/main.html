@@ -16,6 +16,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
+    <!-- TOGGLE BUTTON -->
+    <link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/css/bootstrap4-toggle.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/js/bootstrap4-toggle.min.js"></script>
+
     <!-- HIGH CHARTS IMPORTS -->
     <script src="http://code.highcharts.com/highcharts.js"></script>
     <script src="http://code.highcharts.com/highcharts-more.js"></script>
@@ -43,14 +47,14 @@
             <small class="font-weight-lighter text-dark">FOREX</small>
           </h1>
         </a>
-        <ul class="navbar-nav">
+        <ul class="navbar-nav mr-auto">
 
           <li class="nav-item">
 
-            {% if request.path == '/stream' %}
-            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('stream') }}">stream</a>
+            {% if "stream" in request.path %}
+            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('stream', choice='highcharts') }}">stream</a>
             {% else %}
-            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('stream') }}">stream</a>
+            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('stream', choice='highcharts') }}">stream</a>
             {% endif %}
 
           </li>
@@ -66,27 +70,51 @@
           </li>
 
 
+
+
+
+    </ul>
           <!-- NAV DROPDOWN -->
-          {% if request.path == '/stream' %}
-          <li class="nav-item dropdown">
+{% if "stream" in request.path %}
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item dropdown dropleft">
             <!-- WITHOUT INERT HREF YOU HAVE TO STYLE THE CURSOR -->
             <a class="nav-link dropdown-toggle font-weight-lighter text-dark" data-toggle="dropdown" href="#">toggle charts</a>
             <div class="dropdown-menu">
               {% for cp, title in currency_pairs.items() %}
-              <a class="dropdown-item font-weight-light py-2" id="toggle_{{ cp }}" href="#">{{ cp.upper() }} ({{ title }})</a>
+                  <a class="dropdown-item font-weight-light py-2" id="toggle_{{ cp }}" href="#">{{ cp.upper() }} ({{ title }})</a>
               {% endfor %}
             </div>
           </li>
-          {% endif %}
+
+          <li class="pl-4">
+            <input id="switch" type="checkbox" checked data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success">
+          </li>
 
         </ul>
+    {% endif %}
     </nav>
-
     <!-- CONTENT -->
     <main id="content" role="main" class="container-fluid p-4 bg-dark">
 
-        {% block content %}
-        {% endblock %}
+    {% block content %}
+    {% endblock %}
+
+    <script type="text/javascript">
+      $(function () {
+        $("#switch").change(function() {
+          if (window.location.pathname=='/stream/highcharts') {
+            // load the bokeh page
+            window.location.pathname = 'stream/bokeh';
+
+          } else if (window.location.pathname=='/stream/bokeh') {
+            // load the high charts page
+            window.location.pathname = 'stream/highcharts';
+
+          }
+        })
+      })
+    </script>
 
     </main>
   </body>
