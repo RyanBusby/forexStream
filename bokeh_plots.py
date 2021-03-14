@@ -1,5 +1,5 @@
 import datetime as dt
-from datetime import timedelta
+from datetime import timedelta, timezone
 from dateutil.relativedelta import relativedelta, FR
 
 from bokeh.plotting import figure
@@ -22,7 +22,7 @@ class BokehPlots():
         )
 
     def get_plots(self):
-        now = dt.datetime.utcnow().replace(microsecond=0)
+        now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
         is_closed = self.closed(now)
         if is_closed:
             m = int(59 - self.minutes)
@@ -58,7 +58,10 @@ class BokehPlots():
             times = []
             rates = []
             for row in rows:
-                times.append(row.timestamp)
+                # convert to utc here. bokeh is iffy with time zones
+                utc_ts =\
+                dt.datetime.utcfromtimestamp(row.timestamp.timestamp())
+                times.append(utc_ts)
                 rates.append(row.rate)
 
             plot_data = {'timestamp': times, 'rate': rates}
@@ -81,7 +84,7 @@ class BokehPlots():
             )
             plot.xaxis.formatter = formatters.DatetimeTickFormatter(
                 days="%m/%d",
-                hours="%H",
+                hours="%H %Z",
                 minutes="%l:%M %P"
             )
             plot.add_tools(hover_tool)
