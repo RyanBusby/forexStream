@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
 from data_handler import DataHandler
+from bokeh_plots import BokehPlots
 from market_dicts import title_dict
 
 u, p = os.getenv('uname'), os.getenv('upass')
@@ -63,6 +64,7 @@ class USDJPY(db.Model):
 
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
 data_handler = DataHandler(tables, db)
+bokeh_plots = BokehPlots(tables)
 cps = {
     table.__tablename__: title_dict[table.__tablename__]
     for table in tables
@@ -71,17 +73,28 @@ cps = {
 def index():
     return render_template('index.html')
 
-@app.route('/stream/<string:choice>', methods=["GET","POST"])
-def stream(choice):
+@app.route('/stream/highcharts', methods=["GET","POST"])
+def stream_highcharts():
     cps = {
         table.__tablename__: title_dict[table.__tablename__]
         for table in tables
     }
-    if choice == 'bokeh':
-        return render_template('bokeh.html', currency_pairs=cps)
-    elif choice == 'highcharts':
-        return render_template('highcharts.html', currency_pairs=cps)
+    return render_template('highcharts.html', currency_pairs=cps)
 
+@app.route('/stream/bokeh', methods=["GET","POST"])
+def stream_bokeh():
+    cps = {
+        table.__tablename__: title_dict[table.__tablename__]
+        for table in tables
+    }
+    script, divs, deltas, current_rates = bokeh_plots.get_plots()
+    adjusted_divs = {}
+    # sneak in some bootstrap
+    for tname, div in divs.items():
+        split_div = div.split('class="')
+        add_class = split_div[0]+'class="col-sm-10 '+split_div[1]
+        adjusted_divs[tname] = add_class
+    return render_template('bokeh.html', currency_pairs=cps, script=script, divs=adjusted_divs)
 
 @app.route('/data')
 def data():

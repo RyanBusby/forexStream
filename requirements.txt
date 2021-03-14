@@ -2,3 +2,4 @@ flask==1.1.2
 Flask-Migrate
 psycopg2==2.8.6
 ratelimit==2.2.1
+bokeh==2.3.0

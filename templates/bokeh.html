@@ -3,8 +3,44 @@
 💱 FOREX
 {% endblock %}
 {% block content %}
-<h3 class="text-light font-weight-lighter pt-4">Bokeh charts here</h3>
-<script type="text/javascript">
-  $('#switch').bootstrapToggle('off');
+
+{% for cp in currency_pairs.keys() %}
+
+  <div id="row_{{ cp }}" class="row pl-3 pb-3">
+
+    <div class="col-sm-2  bg-light card">
+
+      <div class="card-body">
+        <h2 id="current_{{ cp }}" class="card-text"></h2>
+        <h4 id="delta_{{ cp }}" class="card-text"></h4>
+        <p id="closed_{{ cp }}" class="card-text"></p>
+      </div>
+
+      <div class="card-footer text-center bg-light">
+        <h3 id="footer_{{ cp }}" class="font-weight-lighter">{{ cp.upper() }}</h3>
+      </div>
+
+    </div>
+
+    {{ divs[cp]|safe }}
+  </div>
+
+{% endfor %}
+
+{{ script|safe }}
+<script>
+$(document).ready(
+
+  function(){
+
+      {% for cp in currency_pairs.keys() %}
+
+      $("#toggle_{{ cp }}").click(function(){
+        $("#row_{{ cp }}").toggle('slow');
+        $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
+      });
+
+      {% endfor %}
+    });
 </script>
 {% endblock %}

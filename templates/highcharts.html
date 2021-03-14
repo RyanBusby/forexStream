@@ -22,14 +22,13 @@
 
     </div>
 
-    <div id="{{ cp }}" class="col-10"></div>
+    <div id="{{ cp }}"  class="col-10"></div>
   </div>
 
 {% endfor %}
 
 
 <script type="text/javascript">
-  $('#switch').bootstrapToggle('on');
   $("#alert").hide();
   {% for cp in currency_pairs.keys() %}
     var chart_{{ cp }};
