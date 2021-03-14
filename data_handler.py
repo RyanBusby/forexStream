@@ -77,6 +77,9 @@ class DataHandler():
         latest_ts = table.query\
             .order_by(table.timestamp.desc())\
             .first().timestamp.replace(microsecond=0)
+        latest_ts = dt.datetime.fromtimestamp(
+            latest_ts.timestamp(), tz=timezone.utc
+        )
         if latest_ts >= self.last_ts:
             return True, latest_ts
         else:
@@ -86,7 +89,7 @@ class DataHandler():
         # check if market is open
         # if its closed - make sure db is loaded up until close
         # if lastest_ts from db is 15 min after cutoff - don't scrape
-        now = dt.datetime.utcnow().replace(microsecond=0)
+        now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
         is_closed = self.closed(now)
         #
         if is_closed:
@@ -107,6 +110,9 @@ class DataHandler():
                 if is_current:
                     break
                 # leave while loop, continue for loop
+                latest_ts = dt.datetime.fromtimestamp(
+                    latest_ts.timestamp(), tz=timezone.utc
+                )
                 if cutoff < latest_ts < now:
                     l_ts = int(latest_ts.timestamp())
                 elif latest_ts < cutoff:
@@ -138,14 +144,15 @@ class DataHandler():
         return cutoff
 
     def convert_wcf(self, wcf):
-    	epoch = dt(1970, 1, 1, tzinfo=timezone.utc)
+    	epoch = dt.datetime(1970, 1, 1, tzinfo=timezone.utc)
     	utc_dt = epoch + timedelta(milliseconds=wcf)
     	return utc_dt
 
     def build_response(self, cutoff):
         response = {}
         _closed = False
-        if self.closed(dt.datetime.utcnow()):
+        now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
+        if self.closed(now):
             _closed = True
         for table in self.tables:
             rows = table.query\
@@ -177,7 +184,6 @@ class DataHandler():
 
 
     def closed(self, now):
-        # this is specific to mst.. fix to work anywhere
     	return (
         	(now.weekday() == 4 and now.time() >= dt.time(21,1))\
         	| (now.weekday() == 5) \

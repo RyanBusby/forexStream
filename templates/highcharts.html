@@ -57,7 +57,7 @@
           $("#alert")
           .removeClass()
           .addClass("alert alert-danger font-weight-light")
-          .html("Forex Trading is available 24 hours a day from 5:00pm ET Sunday through 5:00pm ET on Friday. Charts aren\'t live.")
+          .html("Forex Trading is available 24 hours a day from 10:00 PM UTC Sunday to 9:00 PM UTC on Friday. Charts aren\'t live.")
           .show();
         }
 
@@ -115,10 +115,23 @@
         {% endfor %}
 
       // what tz should view be in?
-      const timezone = new Date().getTimezoneOffset()
+      const local_timezone = new Date().getTimezoneOffset()
+      const utc = 0
+
+      const use_tz = utc
+
+      if (use_tz == 0) {
+        var tz_abbrv = "UTC";
+      } else { var tz_abbrv =
+        new Date().toLocaleTimeString(
+          'en-us',
+          {timeZoneName:'short'}).split(' ')[2]
+      };
+      console.log(tz_abbrv)
+
       Highcharts.setOptions({
         global: {
-          timezoneOffset: timezone
+          timezoneOffset: use_tz
         }
       }
     );
@@ -129,7 +142,6 @@
           height: 230,
           backgroundColor: '#f8f9fa',
           animation: true,
-          marginRight: 10,
           renderTo: '{{ cp }}'
         },
 
@@ -147,6 +159,11 @@
         },
 
         xAxis: {
+          title: {
+            enabled: true,
+            text: tz_abbrv,
+          },
+
           type: 'datetime',
           labels: {
             formatter: function() {
