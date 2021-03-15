@@ -32,7 +32,7 @@ class BPBuilder():
                 .all()
             plot, delta, last_val, increasing = self.get_plot(rows)
             response[tname] = {
-                'data': json.dumps(json_item(plot, tname+"_b")),
+                'data': json.dumps(json_item(plot, tname)),
                 'last_val': last_val,
                 'delta': delta,
                 'increasing': increasing

@@ -81,25 +81,18 @@ cps = {
 @app.route('/')
 def index():
     return render_template('index.html')
+#
+# @app.route('/stream')
+# def stream():
+#     return render_template('highcharts.html', currency_pairs=cps)
 
-@app.route('/stream')
-def stream():
-    return render_template('highcharts.html', currency_pairs=cps)
-
-@app.route('/stream/highcharts', methods=["GET","POST"])
+@app.route('/stream_highcharts', methods=["GET","POST"])
 def stream_highcharts():
     return render_template('highcharts.html', currency_pairs=cps)
 
-@app.route('/stream/bokeh', methods=["GET","POST"])
+@app.route('/stream_bokeh', methods=["GET","POST"])
 def stream_bokeh():
-    script, divs, deltas, current_rates = bp_builder.get_plots()
-    adjusted_divs = {}
-    # sneak in some bootstrap
-    for tname, div in divs.items():
-        split_div = div.split('class="')
-        add_class = split_div[0]+'class="col-sm-10 '+split_div[1]
-        adjusted_divs[tname] = add_class
-    return render_template('bokeh.html', currency_pairs=cps, script=script, divs=adjusted_divs)
+    return render_template('bokeh.html', currency_pairs=cps)
 
 @app.route('/data/<choice>')
 def data(choice):

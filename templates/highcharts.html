@@ -3,7 +3,7 @@
 💱 FOREX
 {% endblock %}
 {% block content %}
-<div id="alert"></div>
+<div id="alert" class="alert alert-danger font-weight-light"></div>
 {% for cp in currency_pairs.keys() %}
 
   <div id="row_{{ cp }}" class="row pl-3 pb-3">
@@ -23,46 +23,16 @@
     </div>
 
     <div id="{{ cp }}"    class="col-10"></div>
-    <div id="{{ cp }}_b"  class="col-10"></div>
   </div>
 
 {% endfor %}
 
 
 <script type="text/javascript">
-
-// NAV BAR DROPDOWN OPTIONS - TOGGLE VISIBILITY OF EACH ROW
-  {% for cp in currency_pairs.keys() %}
-
-  $("#toggle_{{ cp }}").click(function(){
-    $("#row_{{ cp }}").toggle('slow');
-    $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
-  });
-
-  {% endfor %}
-
-// WHEN SWITCH IS HIT, CLEAR ALL DIVS
-  $(function () {
-    $("#switch").change(function() {
-      if ($(this).prop('checked')) {
-        console.log('its checked')
-        clearInterval(interval);
-        interval = setInterval(request_data, 1000);
-      } else {
-        console.log('not checked')
-        {% for cp in currency_pairs %}
-          $("#{{ cp }}").empty().hide();
-          $("#{{ cp }}_b").empty();
-        {% endfor %}
-        clearInterval(interval);
-        interval = setInterval(request_data, 60000);
-      }
-      request_data();
-    })
-  })
-
 // HIDE THE ALERT BY DEFAULT
   $("#alert").hide();
+
+  // init all charts
   {% for cp in currency_pairs.keys() %}
     var chart_{{ cp }};
   {% endfor %}
@@ -83,11 +53,8 @@
 
 
   function request_data() {
-    if ($("#switch").prop('checked')) {
-      var requests = $.get('/data/highcharts');
-    } else {
-      var requests = $.get('/data/bokeh');
-    }
+
+    var requests = $.get('/data/highcharts');
 
     requests.done(
       function (result) {
@@ -95,15 +62,12 @@
           console.log('market closed')
           clearInterval(chartdata);
           $("#alert")
-            .removeClass()
-            .addClass("alert alert-danger font-weight-light")
             .html("Forex Trading is available 24 hours a day from 10:00 PM UTC Sunday to 9:00 PM UTC on Friday. Charts aren\'t live.")
             .show();
         }
 
         {% for cp in currency_pairs.keys() %}
           var formats = card_class_dict[result.{{ cp }}.increasing];
-          if (result.choice=='highcharts') {
             // UPDATE CHART DATA
             chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
 
@@ -112,15 +76,6 @@
               color: formats["new_color"],
               lineColor: formats["new_color"]
             });
-
-          } else if (result.choice=='bokeh') {
-            // EMBED NEW CHART
-            $("#{{ cp }}").hide();
-            $("#{{ cp }}_b").empty();
-
-            item = JSON.parse(result.{{ cp }}.data);
-            Bokeh.embed.embed_item(item);
-          }
 
           // UPDATE CARD
           $('#delta_{{ cp }}')

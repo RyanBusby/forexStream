@@ -3,15 +3,15 @@
 💱 FOREX
 {% endblock %}
 {% block content %}
-
+<div id="alert" class="alert alert-danger font-weight-light"></div>
 {% for cp in currency_pairs.keys() %}
 
   <div id="row_{{ cp }}" class="row pl-3 pb-3">
 
-    <div class="col-sm-2  bg-light card">
+    <div class="col-2  bg-light card">
 
       <div class="card-body">
-        <h2 id="current_{{ cp }}" class="card-text"></h2>
+        <h2 id="current_{{ cp }}" class="card-text text-center font-weight-lighter pt-4"></h2>
         <h4 id="delta_{{ cp }}" class="card-text"></h4>
         <p id="closed_{{ cp }}" class="card-text"></p>
       </div>
@@ -22,25 +22,66 @@
 
     </div>
 
-    {{ divs[cp]|safe }}
+    <div id="{{ cp }}"    class="col-10"></div>
   </div>
 
 {% endfor %}
 
-{{ script|safe }}
 <script>
-$(document).ready(
+  // HIDE THE ALERT BY DEFAULT
+  $("#alert").hide();
 
-  function(){
+  var card_class_dict = {
+    true: {
+      "card_class":"card-text text-center font-weight-lighter text-success",
+      "new_color": "green",
+      "arrow": "▲"
+    },
+    false: {
+      "card_class":"card-text text-center font-weight-lighter text-danger",
+      "new_color": "red",
+      "arrow": "▼"
+    }
+  }
 
-      {% for cp in currency_pairs.keys() %}
+  function request_data() {
+    var requests = $.get('/data/bokeh');
+    requests.done(
+      function (result) {
+        if (result.closed) {
+          console.log('market closed')
+          clearInterval(chartdata);
+          $("#alert")
+            .html("Forex Trading is available 24 hours a day from 10:00 PM UTC Sunday to 9:00 PM UTC on Friday. Charts aren\'t live.")
+            .show();
+        }
 
-      $("#toggle_{{ cp }}").click(function(){
-        $("#row_{{ cp }}").toggle('slow');
-        $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
-      });
+        {% for cp in currency_pairs.keys() %}
+          var formats = card_class_dict[result.{{ cp }}.increasing];
 
-      {% endfor %}
-    });
+          $("#{{ cp }}").empty();
+
+          item = JSON.parse(result.{{ cp }}.data);
+          Bokeh.embed.embed_item(item);
+
+          // UPDATE CARD
+          $('#delta_{{ cp }}')
+            .removeClass()
+            .addClass(
+              formats['card_class']
+            )
+            .html(
+              formats["arrow"].concat(result.{{ cp }}.delta)
+            );
+
+          $('#current_{{ cp }}').html(result.{{ cp }}.last_val);
+
+        {% endfor %}
+      }
+    );
+  }
+
+  request_data();
+  interval = setInterval(request_data, 30000)
 </script>
 {% endblock %}
