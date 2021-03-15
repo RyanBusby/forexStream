@@ -7,10 +7,12 @@ import threading
 from flask import Flask, render_template, session, make_response, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from bokeh.embed import components
 
 from cg_scraper import CGScraper
 from high_charts_builder import HCBuilder
 from bokeh_plots_builder import BPBuilder
+from ajax import AjaxBokeh
 from market_dicts import title_dict
 
 u, p = os.getenv('uname'), os.getenv('upass')
@@ -19,6 +21,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] =\
 f'postgresql://{u}:{p}@localhost:5432/forexticks'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.urandom(16).hex()
+
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -72,6 +75,7 @@ tnames = [table.__tablename__ for table in tables]
 cg_scraper = CGScraper(tables, db)
 hc_builder = HCBuilder(tables)
 bp_builder = BPBuilder(tables)
+ajax_bokeh = AjaxBokeh()
 
 cps = {
     table.__tablename__: title_dict[table.__tablename__]
@@ -115,13 +119,18 @@ def data(choice):
 def new_tab():
     return render_template('new_tab.html')
 
+@app.route('/bokeh')
+def bokeh():
+    p = ajax_bokeh.p
+    script, div = components(p)
+    return render_template('bokeh2.html', script=script, div=div)
+
 def closed(now):
 	return (
     	(now.weekday() == 4 and now.time() >= dt.time(21,1))\
     	| (now.weekday() == 5) \
     	| (now.weekday() == 6 and now.time() < dt.time(21))
     )
-
 def scrape():
     while True:
         now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
@@ -131,6 +140,10 @@ def scrape():
 def run():
     app.run()
 
+def run_bokeh():
+    ajax_bokeh.run()
+
 if __name__ == "__main__":
     threading.Thread(target=scrape).start()
     threading.Thread(target=run).start()
+    threading.Thread(target=run_bokeh).start()
