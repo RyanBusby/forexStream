@@ -8,7 +8,6 @@ from bokeh.embed import components, json_item
 from bokeh.models import ColumnDataSource, Label, Panel, Tabs, HoverTool, Span, CrosshairTool, formatters
 
 class BPBuilder():
-    # load ticks from this view as well
     def __init__(self, tables, minutes=30):
         self.tables = tables
         self.minutes = minutes
@@ -33,7 +32,7 @@ class BPBuilder():
                 .all()
             plot, delta, last_val, increasing = self.get_plot(rows)
             response[tname] = {
-                'data': json.dumps(json_item(plot, tname)),
+                'data': json.dumps(json_item(plot, tname+"_b")),
                 'last_val': last_val,
                 'delta': delta,
                 'increasing': increasing

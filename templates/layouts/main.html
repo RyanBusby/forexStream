@@ -60,9 +60,9 @@
           <li class="nav-item">
 
             {% if "stream" in request.path %}
-            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('stream_highcharts') }}">stream</a>
+            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('stream') }}">stream</a>
             {% else %}
-            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('stream_highcharts') }}">stream</a>
+            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('stream') }}">stream</a>
             {% endif %}
 
           </li>
@@ -94,16 +94,9 @@
               {% endfor %}
             </div>
           </li>
-
-          {% if "highcharts" in request.path %}
           <li class="pl-4">
-            <input id="switch" class="form-check-input" type="checkbox" checked data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success">
+            <input id="switch" class="form-check-input" type="checkbox" data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success" checked>
           </li>
-          {% elif "bokeh" in request.path %}
-          <li class="pl-4">
-            <input id="switch" class="form-check-input" type="checkbox"  data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success">
-          </li>
-          {% endif %}
         </ul>
       {% endif %}
     </nav>

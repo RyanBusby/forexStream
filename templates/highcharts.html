@@ -11,7 +11,7 @@
     <div class="col-2  bg-light card">
 
       <div class="card-body">
-        <h2 id="current_{{ cp }}" class="card-text"></h2>
+        <h2 id="current_{{ cp }}" class="card-text text-center font-weight-lighter pt-4"></h2>
         <h4 id="delta_{{ cp }}" class="card-text"></h4>
         <p id="closed_{{ cp }}" class="card-text"></p>
       </div>
@@ -22,7 +22,8 @@
 
     </div>
 
-    <div id="{{ cp }}"  class="col-10"></div>
+    <div id="{{ cp }}"    class="col-10"></div>
+    <div id="{{ cp }}_b"  class="col-10"></div>
   </div>
 
 {% endfor %}
@@ -30,20 +31,42 @@
 
 <script type="text/javascript">
 
+// NAV BAR DROPDOWN OPTIONS - TOGGLE VISIBILITY OF EACH ROW
+  {% for cp in currency_pairs.keys() %}
+
+  $("#toggle_{{ cp }}").click(function(){
+    $("#row_{{ cp }}").toggle('slow');
+    $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
+  });
+
+  {% endfor %}
+
+// WHEN SWITCH IS HIT, CLEAR ALL DIVS
   $(function () {
     $("#switch").change(function() {
-      {% for cp in currency_pairs %}
-        $("#{{ cp }}").empty();
-        $
-      {% endfor %}
+      if ($(this).prop('checked')) {
+        console.log('its checked')
+        clearInterval(interval);
+        interval = setInterval(request_data, 1000);
+      } else {
+        console.log('not checked')
+        {% for cp in currency_pairs %}
+          $("#{{ cp }}").empty().hide();
+          $("#{{ cp }}_b").empty();
+        {% endfor %}
+        clearInterval(interval);
+        interval = setInterval(request_data, 60000);
+      }
       request_data();
     })
   })
 
+// HIDE THE ALERT BY DEFAULT
   $("#alert").hide();
   {% for cp in currency_pairs.keys() %}
     var chart_{{ cp }};
   {% endfor %}
+
 
   var card_class_dict = {
     true: {
@@ -58,10 +81,9 @@
     }
   }
 
-  function request_data() {
 
-    var choice = document.getElementById('switch').checked;
-    if (choice==true){
+  function request_data() {
+    if ($("#switch").prop('checked')) {
       var requests = $.get('/data/highcharts');
     } else {
       var requests = $.get('/data/bokeh');
@@ -73,16 +95,15 @@
           console.log('market closed')
           clearInterval(chartdata);
           $("#alert")
-          .removeClass()
-          .addClass("alert alert-danger font-weight-light")
-          .html("Forex Trading is available 24 hours a day from 10:00 PM UTC Sunday to 9:00 PM UTC on Friday. Charts aren\'t live.")
-          .show();
+            .removeClass()
+            .addClass("alert alert-danger font-weight-light")
+            .html("Forex Trading is available 24 hours a day from 10:00 PM UTC Sunday to 9:00 PM UTC on Friday. Charts aren\'t live.")
+            .show();
         }
 
         {% for cp in currency_pairs.keys() %}
           var formats = card_class_dict[result.{{ cp }}.increasing];
           if (result.choice=='highcharts') {
-
             // UPDATE CHART DATA
             chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
 
@@ -93,7 +114,10 @@
             });
 
           } else if (result.choice=='bokeh') {
-            $("#{{ cp }}").empty();
+            // EMBED NEW CHART
+            $("#{{ cp }}").hide();
+            $("#{{ cp }}_b").empty();
+
             item = JSON.parse(result.{{ cp }}.data);
             Bokeh.embed.embed_item(item);
           }
@@ -108,14 +132,7 @@
               formats["arrow"].concat(result.{{ cp }}.delta)
             );
 
-          $('#current_{{ cp }}')
-            .removeClass()
-            .addClass(
-              "card-text text-center font-weight-lighter pt-4"
-            )
-            .html(
-              result.{{ cp }}.last_val
-            );
+          $('#current_{{ cp }}').html(result.{{ cp }}.last_val);
 
         {% endfor %}
       }
@@ -123,20 +140,11 @@
   }
 
   request_data();
-  var chartdata = setInterval(request_data, 1000)
+  interval = setInterval(request_data, 1000)
 
   $(document).ready(
 
     function(){
-
-        {% for cp in currency_pairs.keys() %}
-
-        $("#toggle_{{ cp }}").click(function(){
-          $("#row_{{ cp }}").toggle('slow');
-          $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
-        });
-
-        {% endfor %}
 
       // what tz should view be in?
       const local_timezone = new Date().getTimezoneOffset()
