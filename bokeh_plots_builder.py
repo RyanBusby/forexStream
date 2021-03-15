@@ -6,7 +6,7 @@ from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, Label, Panel, Tabs, HoverTool, Span, CrosshairTool, formatters
 
-class BokehPlots():
+class BPBuilder():
     # load ticks from this view as well
     def __init__(self, tables, minutes=30):
         self.tables=tables
@@ -34,7 +34,7 @@ class BokehPlots():
         hover_tool = HoverTool(
             tooltips=[
             # https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.DatetimeTickFormatter
-                ('timestamp', '@{timestamp}{%d %b %Y %l:%M %p}'),
+                ('timestamp', '@{timestamp}{%d %b %Y %l:%M:%S:%N %P}'),
                 ('rate', '@{rate}{%0.4f}'),
                 # ('timestamp', '@{bardate}{%c}'), #preferred datetime
             ],

@@ -1,13 +1,16 @@
 import os
 import json
-from datetime import datetime as dt
+import datetime as dt
+from datetime import timezone
+import threading
 
 from flask import Flask, render_template, session, make_response, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-from data_handler import DataHandler
-from bokeh_plots import BokehPlots
+from cg_scraper import CGScraper
+from high_charts_builder import HCBuilder
+from bokeh_plots_builder import BPBuilder
 from market_dicts import title_dict
 
 u, p = os.getenv('uname'), os.getenv('upass')
@@ -23,71 +26,69 @@ migrate = Migrate(app, db)
 class AUDUSD(db.Model):
     __tablename__ = 'audusd'
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
 class EURUSD(db.Model):
     __tablename__ = 'eurusd'
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
 class GBPUSD(db.Model):
     __tablename__ = 'gbpusd'
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
 class NZDUSD(db.Model):
     __tablename__ = 'nzdusd'
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
 class USDCAD(db.Model):
     __tablename__ = 'usdcad'
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
 class USDCHF(db.Model):
     __tablename__ = 'usdchf'
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
 class USDJPY(db.Model):
     __tablename__ = 'usdjpy'
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
+
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
-data_handler = DataHandler(tables, db)
-bokeh_plots = BokehPlots(tables)
+tnames = [table.__tablename__ for table in tables]
+
+cg_scraper = CGScraper(tables, db, minutes=45)
+hc_builder = HCBuilder(tables, db, minutes=45)
+bp_builder = BPBuilder(tables)
+
 cps = {
     table.__tablename__: title_dict[table.__tablename__]
     for table in tables
 }
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/stream/highcharts', methods=["GET","POST"])
 def stream_highcharts():
-    cps = {
-        table.__tablename__: title_dict[table.__tablename__]
-        for table in tables
-    }
     return render_template('highcharts.html', currency_pairs=cps)
 
 @app.route('/stream/bokeh', methods=["GET","POST"])
 def stream_bokeh():
-    cps = {
-        table.__tablename__: title_dict[table.__tablename__]
-        for table in tables
-    }
-    script, divs, deltas, current_rates = bokeh_plots.get_plots()
+    script, divs, deltas, current_rates = bp_builder.get_plots()
     adjusted_divs = {}
     # sneak in some bootstrap
     for tname, div in divs.items():
@@ -98,10 +99,31 @@ def stream_bokeh():
 
 @app.route('/data')
 def data():
-    cutoff = data_handler.load_ticks()
-    response = data_handler.build_response(cutoff)
+    now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
+    is_closed = closed(now)
+    response = hc_builder.build_response(is_closed)
     return jsonify(response)
 
 @app.route('/new_tab')
 def new_tab():
     return render_template('new_tab.html')
+
+def closed(now):
+	return (
+    	(now.weekday() == 4 and now.time() >= dt.time(21,1))\
+    	| (now.weekday() == 5) \
+    	| (now.weekday() == 6 and now.time() < dt.time(21))
+    )
+
+def scrape():
+    while True:
+        now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
+        is_closed = closed(now)
+        cg_scraper.loadticks(now, is_closed)
+
+def run():
+    app.run()
+
+if __name__ == "__main__":
+    threading.Thread(target=scrape).start()
+    threading.Thread(target=run).start()
