@@ -114,22 +114,7 @@
     {% block content %}
     {% endblock %}
 
-    <script type="text/javascript">
-      $(function () {
-        $("#switch").change(function() {
-          if (window.location.pathname=='/stream/highcharts') {
-            // load the bokeh page
-            window.location.pathname = 'stream/bokeh';
-
-          } else if (window.location.pathname=='/stream/bokeh') {
-            // load the high charts page
-            window.location.pathname = 'stream/highcharts';
-
-          }
-        })
-      })
     </script>
-
     </main>
   </body>
 </html>

@@ -29,6 +29,17 @@
 
 
 <script type="text/javascript">
+
+  $(function () {
+    $("#switch").change(function() {
+      {% for cp in currency_pairs %}
+        $("#{{ cp }}").empty();
+        $
+      {% endfor %}
+      request_data();
+    })
+  })
+
   $("#alert").hide();
   {% for cp in currency_pairs.keys() %}
     var chart_{{ cp }};
@@ -48,7 +59,14 @@
   }
 
   function request_data() {
-    var requests = $.get('/data');
+
+    var choice = document.getElementById('switch').checked;
+    if (choice==true){
+      var requests = $.get('/data/highcharts');
+    } else {
+      var requests = $.get('/data/bokeh');
+    }
+
     requests.done(
       function (result) {
         if (result.closed) {
@@ -62,17 +80,23 @@
         }
 
         {% for cp in currency_pairs.keys() %}
-
           var formats = card_class_dict[result.{{ cp }}.increasing];
+          if (result.choice=='highcharts') {
 
-          // UPDATE CHART DATA
-          chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
+            // UPDATE CHART DATA
+            chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
 
-          // UPDATE CHART PROPERTIES
-          chart_{{ cp }}.series[0].update({
-            color: formats["new_color"],
-            lineColor: formats["new_color"]
-          });
+            // UPDATE CHART PROPERTIES
+            chart_{{ cp }}.series[0].update({
+              color: formats["new_color"],
+              lineColor: formats["new_color"]
+            });
+
+          } else if (result.choice=='bokeh') {
+            $("#{{ cp }}").empty();
+            item = JSON.parse(result.{{ cp }}.data);
+            Bokeh.embed.embed_item(item);
+          }
 
           // UPDATE CARD
           $('#delta_{{ cp }}')

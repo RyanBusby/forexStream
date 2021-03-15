@@ -11,7 +11,7 @@ class HCBuilder():
     '''
     DataHandler queries the the db and builds response objects for high charts.
     '''
-    def __init__(self, tables, db, minutes=30):
+    def __init__(self, tables, minutes=30):
         self.tables = tables
         # self.tick_tables = tick_tables
         # self.ohlc_tables = ohlc_tables
@@ -47,4 +47,5 @@ class HCBuilder():
                 'increasing': increasing,
             }
         response['closed'] = is_closed
+        response['choice'] = 'highcharts'
         return response

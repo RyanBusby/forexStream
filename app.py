@@ -69,8 +69,8 @@ class USDJPY(db.Model):
 tables = [AUDUSD, EURUSD, GBPUSD, NZDUSD, USDCAD, USDCHF, USDJPY]
 tnames = [table.__tablename__ for table in tables]
 
-cg_scraper = CGScraper(tables, db, minutes=45)
-hc_builder = HCBuilder(tables, db, minutes=45)
+cg_scraper = CGScraper(tables, db)
+hc_builder = HCBuilder(tables)
 bp_builder = BPBuilder(tables)
 
 cps = {
@@ -81,6 +81,10 @@ cps = {
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/stream')
+def stream():
+    return render_template('highcharts.html', currency_pairs=cps)
 
 @app.route('/stream/highcharts', methods=["GET","POST"])
 def stream_highcharts():
@@ -97,12 +101,22 @@ def stream_bokeh():
         adjusted_divs[tname] = add_class
     return render_template('bokeh.html', currency_pairs=cps, script=script, divs=adjusted_divs)
 
-@app.route('/data')
-def data():
+@app.route('/data/<choice>')
+def data(choice):
     now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
     is_closed = closed(now)
-    response = hc_builder.build_response(is_closed)
+    if choice == 'bokeh':
+        response = bp_builder.build_response(is_closed)
+    elif choice == 'highcharts':
+        response = hc_builder.build_response(is_closed)
     return jsonify(response)
+
+# @app.route('/chart')
+# def chart():
+#     now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
+#     is_closed = closed(now)
+#     response = hc_builder.build_response(is_closed)
+#     return jsonify(response)
 
 @app.route('/new_tab')
 def new_tab():
