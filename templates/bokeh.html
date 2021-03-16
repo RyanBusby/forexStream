@@ -6,13 +6,28 @@
 <div id="alert" class="alert alert-danger font-weight-light"></div>
 
 {% for cp, div in divs.items() %}
-  <div id="row_{{ cp }}" class="row pl-3 pb-3">
-    <div class="col-2 bg-light card">
+
+<div id="row_{{ cp }}" class="row pl-3 pb-3">
+
+  <div class="col-2 bg-light card">
+
+    <div class="card-body">
+      <h2 id="current_{{ cp }}" class="card-text text-center font-weight-lighter pt-4"></h2>
+      <h4 id="delta_{{ cp }}" class="card-text"></h4>
+      <p id="closed_{{ cp }}" class="card-text"></p>
     </div>
-    <div class="col-10">
-      {{ div|safe }}
+
+    <div class="card-footer text-center bg-light">
+      <h3 id="footer_{{ cp }}" class="font-weight-lighter">{{ cp.upper() }}</h3>
     </div>
+
   </div>
+
+  <div class="col-10">
+    {{ div|safe }}
+  </div>
+
+</div>
 
 {% endfor %}
 

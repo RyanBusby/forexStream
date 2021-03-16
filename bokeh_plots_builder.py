@@ -20,7 +20,7 @@ class BPBuilder():
             url =f"http://localhost:5000/ajax_data/{name}/{self.minutes}"
             source = AjaxDataSource(
                 data_url=url,
-                polling_interval=10000,
+                polling_interval=1000,
                 mode='replace'
             )
 
@@ -48,10 +48,9 @@ class BPBuilder():
             line = plot.line(
                 'timestamp',
                 'rate',
-                source=source,
-                color=Purples[7][1]
+                source=source
             )
-            plot.background_fill_color = Purples[7][6]
+            plot.background_fill_color = '#f8f9fa'
             hover_tool = HoverTool(
                 tooltips=[
                 # https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.DatetimeTickFormatter
@@ -66,20 +65,43 @@ class BPBuilder():
             plot.add_tools(hover_tool)
 
             callback = CustomJS(
-                args={'line':line, 'source':source}, code="""
-                console.log('HERE WE ARE, that bitch changed');
+                args={'line':line, 'source':source, 'cp':name}, code="""
                 var rates = source.data.rate;
                 var first_val = rates[0];
                 var last_val = rates[rates.length-1];
+                var delta = Number.parseFloat(Math.abs(last_val-first_val)).toFixed(5);
                 var increasing = first_val < last_val;
                 if (increasing) {
                     line.glyph.line_color = 'green';
                 } else {
                     line.glyph.line_color = 'red';
                 }
+                        var card_class_dict = {
+                        true: {
+                          "card_class":"card-text text-center font-weight-lighter text-success",
+                          "new_color": "green",
+                          "arrow": "▲"
+                        },
+                        false: {
+                          "card_class":"card-text text-center font-weight-lighter text-danger",
+                          "new_color": "red",
+                          "arrow": "▼"
+                          }
+                        }
+                        var formats = card_class_dict[increasing];
+
+                        $('#delta_'+cp)
+                        .removeClass()
+                        .addClass(
+                              formats['card_class']
+                        )
+                        .html(
+                            formats["arrow"].concat(delta)
+                        );
+                        $('#current_'+cp).html(last_val);
+
                 """
             )
             source.js_on_change('change:data', callback)
             plot_dict[name] = plot
-
         return components(plot_dict)
