@@ -4,6 +4,7 @@ import datetime as dt
 from datetime import timezone, timedelta
 import threading
 import math
+from time import mktime
 
 from flask import Flask, render_template, session, make_response, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -14,8 +15,8 @@ from bokeh.models import AjaxDataSource
 
 from cg_scraper import CGScraper
 from high_charts_builder import HCBuilder
-# from bokeh_plots_builder import BPBuilder
-# from ajax import AjaxBokeh
+from bokeh_plots_builder import BPBuilder
+
 from market_dicts import title_dict
 
 u, p = os.getenv('uname'), os.getenv('upass')
@@ -76,13 +77,13 @@ tnames = {table.__tablename__: table for table in tables}
 
 cg_scraper = CGScraper(tables, db)
 hc_builder = HCBuilder(tables)
-# bp_builder = BPBuilder(tables)
+bp_builder = BPBuilder(tables)
 
 cps = {
     table.__tablename__: title_dict[table.__tablename__]
     for table in tables
 }
-x, y = 0, 0
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -93,58 +94,40 @@ def stream_highcharts():
 
 @app.route('/stream_bokeh')
 def stream_bokeh():
-    streaming = True
-    plot_dict = {}
-    for table in tables[:1]:
-        tname = table.__tablename__
-        source = AjaxDataSource(
-            data_url="http://localhost:5000/ajax_data/%s" % tname,
-            polling_interval=100,
-            mode='append'
-        )
-        thirty_ago = dt.datetime.now() - timedelta(minutes=30)
-        row = table.query\
-            .filter(table.timestamp > thirty_ago)\
-            .order_by(table.timestamp.desc())\
-            .first()
-
-        source.data = dict(timestamp=[row.timestamp], rate=[row.rate])
-        source.data = dict(timestamp=[], rate=[])
-
-
-        plot = figure(
-            title=tname.upper(),
-            plot_height=250,
-            plot_width=1150,
-            x_axis_type='datetime'
-        )
-
-        plot.line('timestamp', 'rate', source=source, line_width=15)
-        # plot.x_range.follow = "end"
-        # plot.x_range.follow_interval = 1000
-        plot_dict[tname] = plot
-
-    script, divs = components(plot_dict)
-
+    script, divs = bp_builder.build_components()
     return render_template('bokeh.html', divs=divs, script=script, currency_pairs=cps)
 
-@app.route('/data/<choice>')
-def data(choice):
+@app.route('/hcdata')
+def data():
     now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
     is_closed = closed(now)
     response = hc_builder.build_response(is_closed)
     return jsonify(response)
 
-@app.route("/ajax_data/<tname>", methods=['POST'])
-def get_data(tname):
-    # table = tnames[tname]
-    # row = table.query.order_by(table.timestamp.desc()).first()
-    # x = row.timestamp
-    # y = row.rate
-    global x, y
-    x = x + 0.1
-    y = math.sin(x)
-    return jsonify(timestamp=[x], rate=[y])
+@app.route("/ajax_data/<tname>/<int:cutoff>", methods=['POST', "GET"])
+def get_data(tname, cutoff):
+    table = tnames[tname]
+    thirty_ago = dt.datetime.now() - timedelta(minutes=cutoff)
+    rows = table.query\
+        .filter(table.timestamp > thirty_ago)\
+        .order_by(table.timestamp)\
+        .all()
+    timestamps = []
+    rates = []
+    for row in rows:
+        x = row.timestamp.timestamp()*1000
+        y = row.rate
+        timestamps.append(x)
+        rates.append(y)
+
+    if rates[0] > rates[-1]:
+        color = 'red'
+    else:
+        color = 'green'
+
+    colors = [color for _ in range(len(rates))]
+
+    return jsonify(timestamp=timestamps, rate=rates, color=colors)
 
 
 @app.route('/new_tab')

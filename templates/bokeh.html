@@ -5,9 +5,14 @@
 {% block content %}
 <div id="alert" class="alert alert-danger font-weight-light"></div>
 
-{% for div in divs.values() %}
-
-  {{ div|safe }}
+{% for cp, div in divs.items() %}
+  <div id="row_{{ cp }}" class="row pl-3 pb-3">
+    <div class="col-2 bg-light card">
+    </div>
+    <div class="col-10">
+      {{ div|safe }}
+    </div>
+  </div>
 
 {% endfor %}
 

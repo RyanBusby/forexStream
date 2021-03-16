@@ -29,7 +29,7 @@ class HCBuilder():
             table_data = []
             for row in rows:
                 table_data.append(
-                    [mktime(row.timestamp.timetuple())*1000, row.rate]
+                    [row.timestamp.timestamp()*1000, row.rate]
                 )
             first_val = table_data[0][1]
             last_val = table_data[-1][1]
