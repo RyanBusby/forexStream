@@ -129,13 +129,15 @@
           height: 230,
           backgroundColor: '#f8f9fa',
           animation: true,
-          renderTo: '{{ cp }}'
+          renderTo: '{{ cp }}',
+          zoomType: 'x'
         },
 
 
         tooltip: {
-          xDateFormat: '%A, %b %e, %l:%M:%S %P',
+          // xDateFormat: '%A, %b %e, %l:%M:%S %P',
           backgroundColor: '#343a40',
+          borderWidth: 0,
           style: {
             color: 'white'
           }
@@ -185,6 +187,42 @@
             }
           }
         },
+        // tooltip: {
+        //     shape: 'square',
+        //     headerShape: 'callout',
+        //     borderWidth: 0,
+        //     shadow: false,
+        //     backgroundColor: '#343a40',
+        //     style: {
+        //       color: 'white'
+        //     },
+        //     positioner: function (width, height, point) {
+        //         var chart = this.chart,
+        //             position;
+        //
+        //         if (point.isHeader) {
+        //             position = {
+        //                 x: Math.max(
+        //                     // Left side limit
+        //                     chart.plotLeft,
+        //                     Math.min(
+        //                         point.plotX + chart.plotLeft - width / 2,
+        //                         // Right side limit
+        //                         chart.chartWidth - width - chart.marginRight
+        //                     )
+        //                 ),
+        //                 y: point.plotY
+        //             };
+        //         } else {
+        //             position = {
+        //                 x: point.series.chart.plotLeft,
+        //                 y: point.series.yAxis.top - chart.plotTop
+        //             };
+        //         }
+        //
+        //         return position;
+        //     }
+        // },
 
         series: [
           {
@@ -196,11 +234,21 @@
               enabled: false
             },
           }
-        ]
-      }
-    );
+        ],
+        responsive: {
+            rules: [{
+                condition: {
+                    maxWidth: 800
+                },
+                chartOptions: {
+                    rangeSelector: {
+                        inputEnabled: false
+                    }
+                }
+            }]
+        }
+      });
     {% endfor %}
-    }
-  );
+  });
 </script>
 {% endblock %}

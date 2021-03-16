@@ -25,9 +25,8 @@ class BPBuilder():
             )
 
             plot = figure(
-                title=name.upper(),
                 plot_height=250,
-                plot_width=1150,
+                plot_width=1200,
                 x_axis_type='datetime'
             )
 
