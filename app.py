@@ -120,14 +120,7 @@ def get_data(tname, cutoff):
         timestamps.append(x)
         rates.append(y)
 
-    if rates[0] > rates[-1]:
-        color = 'red'
-    else:
-        color = 'green'
-
-    colors = [color for _ in range(len(rates))]
-
-    return jsonify(timestamp=timestamps, rate=rates, color=colors)
+    return jsonify(timestamp=timestamps, rate=rates)
 
 
 @app.route('/new_tab')
