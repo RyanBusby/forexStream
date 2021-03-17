@@ -16,6 +16,14 @@
 
 
 <script type="text/javascript">
+
+  {% for cp in currency_pairs.keys() %}
+
+  $("#toggle_{{ cp }}").click(function(){
+    $("#row_{{ cp }}").toggle('slow');
+    $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
+  });
+  {% endfor %}
 // HIDE THE ALERT BY DEFAULT
   $("#alert").hide();
 
@@ -66,7 +74,6 @@
           'en-us',
           {timeZoneName:'short'}).split(' ')[2]
       };
-      console.log(tz_abbrv)
 
       Highcharts.setOptions({
         global: {
