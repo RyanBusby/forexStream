@@ -40,8 +40,9 @@
 
 
     <!-- HIGH CHARTS IMPORTS -->
+    {% if 'ohlc' not in request.path %}
     <script src="http://code.highcharts.com/highcharts.js"></script>
-
+    {% endif %}
     <script src="http://code.highcharts.com/highcharts-more.js"></script>
     <script src="http://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
@@ -147,9 +148,12 @@
           }
         })
       })
+    </script>
     {% endif %}
 
-    {% if "stream" in request.path  %}
+
+    {% if "stream" in request.path or "ohlc" in request.path %}
+    <script>
       // NAV BAR DROPDOWN OPTIONS - TOGGLE VISIBILITY OF EACH ROW
       {% for cp in currency_pairs.keys() %}
 
@@ -158,9 +162,11 @@
         $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
       });
       {% endfor %}
+      // HIDE THE ALERT BY DEFAULT
+      $("#alert").hide();
+    </script>
     {% endif %}
 
-    </script>
     </main>
   </body>
 </html>
