@@ -16,8 +16,8 @@ class BPBuilder():
     def build_components(self):
         plot_dict = {}
         for table in self.tables:
-            name = table.__tablename__
-            url =f"http://localhost:5000/ajax_data/{name}/{self.minutes}"
+            cp = table.__tablename__
+            url =f"http://localhost:5000/ajax_data/{cp}/{self.minutes}"
             source = AjaxDataSource(
                 data_url=url,
                 polling_interval=1000,
@@ -29,7 +29,6 @@ class BPBuilder():
                 plot_width=1200,
                 x_axis_type='datetime'
             )
-
 
             plot.xaxis.formatter = formatters.DatetimeTickFormatter(
                 days="%m/%d",
@@ -43,7 +42,7 @@ class BPBuilder():
 
             )
             plot.xaxis.axis_label = "UTC"
-            # use multi_line to set color
+
             line = plot.line(
                 'timestamp',
                 'rate',
@@ -64,7 +63,7 @@ class BPBuilder():
             plot.add_tools(hover_tool)
 
             callback = CustomJS(
-                args={'line':line, 'source':source, 'cp':name}, code="""
+                args={'line':line, 'source':source, 'cp':cp}, code="""
                 var rates = source.data.rate;
                 var first_val = rates[0];
                 var last_val = rates[rates.length-1];
@@ -102,5 +101,5 @@ class BPBuilder():
                 """
             )
             source.js_on_change('change:data', callback)
-            plot_dict[name] = plot
+            plot_dict[cp] = plot
         return components(plot_dict)

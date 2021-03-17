@@ -10,6 +10,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    {% if 'ohlc' in request.path %}
+
+    <link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/stocktools/gui.css">
+    <link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/annotations/popup.css">
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+
+    <script src="https://code.highcharts.com/stock/modules/data.js"></script>
+
+    <script src="https://code.highcharts.com/stock/indicators/indicators-all.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/drag-panes.js"></script>
+
+    <script src="https://code.highcharts.com/modules/annotations-advanced.js"></script>
+    <script src="https://code.highcharts.com/modules/price-indicator.js"></script>
+    <script src="https://code.highcharts.com/modules/full-screen.js"></script>
+
+    <script src="https://code.highcharts.com/modules/stock-tools.js"></script>
+    {% endif %}
+
     <link rel="stylesheet"
       href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -23,6 +41,7 @@
 
     <!-- HIGH CHARTS IMPORTS -->
     <script src="http://code.highcharts.com/highcharts.js"></script>
+
     <script src="http://code.highcharts.com/highcharts-more.js"></script>
     <script src="http://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
@@ -45,6 +64,7 @@
           }
       }
     </style>
+
 
   </head>
   <body>
@@ -70,21 +90,17 @@
 
           <li class="nav-item">
 
-            {% if request.path == '/new_tab' %}
-            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('new_tab') }}">new_tab</a>
+            {% if request.path == '/ohlc' %}
+            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('ohlc') }}">ohlc</a>
             {% else %}
-            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('new_tab') }}">new_tab</a>
+            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('ohlc') }}">ohlc</a>
             {% endif %}
 
           </li>
 
-
-
-
-
     </ul>
           <!-- NAV DROPDOWN -->
-    {% if "stream" in request.path %}
+    {% if "stream" in request.path or "ohlc" in request.path %}
         <ul class="navbar-nav ml-auto">
           <li class="nav-item dropdown dropleft">
             <!-- WITHOUT INERT HREF YOU HAVE TO STYLE THE CURSOR -->

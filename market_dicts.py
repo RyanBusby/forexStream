@@ -20,11 +20,11 @@ price_types = {
 
 
 title_dict = {
-    'usdcad': 'Canadian Dollar / United States Dollar',
-    'usdchf': 'Swiss Franc / United States Dollar',
-    'usdjpy': 'Japanese Yen / United States Dollar',
-    'audusd': 'United States Dollar / Australian Dollar',
-    'eurusd': 'United States Dollar / Euro',
-    'gbpusd': 'United States Dollar / Pound Sterling',
-    'nzdusd': 'United States Dollar / New Zealand Dollar'
+    'usdcad': 'United States Dollar / Canadian Dollar',
+    'usdchf': 'United States Dollar / Swiss Franc',
+    'usdjpy': 'United States Dollar / Japanese Yen',
+    'audusd': 'Australian Dollar / United States Dollar',
+    'eurusd': 'Euro / United States Dollar',
+    'gbpusd': 'Pound Sterling / United States Dollar',
+    'nzdusd': 'New Zealand Dollar / United States Dollar'
 }

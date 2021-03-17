@@ -11,11 +11,31 @@ class HCBuilder():
     '''
     DataHandler queries the the db and builds response objects for high charts.
     '''
-    def __init__(self, tables, minutes=30):
+    def __init__(self, tables, ohlc_tables, minutes=30):
         self.tables = tables
         # self.tick_tables = tick_tables
-        # self.ohlc_tables = ohlc_tables
+        self.ohlc_tables = ohlc_tables
         self.minutes = minutes
+
+    def build_ohlc_response(self, is_closed):
+        response = {}
+        for table in self.ohlc_tables:
+            rows = table.query.order_by(table.timestamp).all()
+            table_data = []
+            for row in rows:
+                table_data.append(
+                    [
+                        row.timestamp.timestamp()*1000,
+                        row.open,
+                        row.high,
+                        row.low,
+                        row.close
+                    ]
+                )
+            # change the cp in view to match this ohlc table name
+            response[table.__tablename__[:6]] = {'data': table_data}
+        response['closed'] = is_closed
+        return response
 
     def build_response(self, is_closed):
         # get the latest entries

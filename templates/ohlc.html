@@ -1,0 +1,197 @@
+{% extends 'layouts/main.html' %}
+{% block title %}
+💱 FOREX
+{% endblock %}
+{% block content %}
+<div id="alert" class="alert alert-danger font-weight-light"></div>
+{% for cp in currency_pairs.keys() %}
+
+  <div id="row_{{ cp }}" class="row pl-3 pb-3">
+
+    <div id="{{ cp }}" class="col-12"></div>
+
+  </div>
+
+{% endfor %}
+
+
+<script type="text/javascript">
+// HIDE THE ALERT BY DEFAULT
+  $("#alert").hide();
+
+  // init all charts
+  {% for cp in currency_pairs.keys() %}
+    var chart_{{ cp }};
+  {% endfor %}
+
+
+  function request_data() {
+
+    var requests = $.get('/ohlc_data');
+
+    requests.done(
+      function (result) {
+        if (result.closed) {
+          console.log('market closed')
+          clearInterval(chartdata);
+          $("#alert")
+            .html("Forex Trading is available 24 hours a day from 10:00 PM UTC Sunday to 9:00 PM UTC on Friday. Charts aren\'t live.")
+            .show();
+        }
+        {% for cp in currency_pairs.keys() %}
+            // UPDATE CHART DATA
+            chart_{{ cp }}.series[0].setData(result.{{ cp }}.data);
+
+        {% endfor %}
+      }
+    );
+  }
+
+  request_data();
+
+  $(document).ready(
+
+    function(){
+
+      // what tz should view be in?
+      const local_timezone = new Date().getTimezoneOffset()
+      const utc = 0
+
+      const use_tz = utc
+
+      if (use_tz == 0) {
+        var tz_abbrv = "UTC";
+      } else { var tz_abbrv =
+        new Date().toLocaleTimeString(
+          'en-us',
+          {timeZoneName:'short'}).split(' ')[2]
+      };
+      console.log(tz_abbrv)
+
+      Highcharts.setOptions({
+        global: {
+          timezoneOffset: use_tz
+        }
+      }
+    );
+    {% for cp, marketname in currency_pairs.items() %}
+    chart_{{ cp }} = new Highcharts.stockChart(
+      {
+        chart: {
+          height: 350,
+          backgroundColor: '#f8f9fa',
+          animation: true,
+          renderTo: '{{ cp }}'
+          // zoomType: 'x'
+        },
+
+
+        // tooltip: {
+        //   // xDateFormat: '%A, %b %e, %l:%M:%S %P',
+        //   backgroundColor: '#343a40',
+        //   borderWidth: 0,
+        //   style: {
+        //     color: 'white'
+        //   }
+        // },
+
+        title: {
+          text: "{{ marketname }}"
+        },
+
+        // xAxis: {
+        //   type: 'datetime',
+        // },
+
+        yAxis: [{
+            labels: {
+                align: 'left'
+            },
+            height: '80%',
+            resize: {
+                enabled: true
+            }
+        }, {
+            labels: {
+                align: 'left'
+            },
+            top: '80%',
+            height: '20%',
+            offset: 0
+        }],
+        legend: {
+          enabled: false
+        },
+        plotOptions: {
+          series: {
+            marker: {
+              enabled: false
+            }
+          }
+        },
+        tooltip: {
+            shape: 'square',
+            headerShape: 'callout',
+            borderWidth: 0,
+            shadow: false,
+            backgroundColor: '#343a40',
+            style: {
+              color: 'white'
+            },
+            positioner: function (width, height, point) {
+                var chart = this.chart,
+                    position;
+
+                if (point.isHeader) {
+                    position = {
+                        x: Math.max(
+                            // Left side limit
+                            chart.plotLeft,
+                            Math.min(
+                                point.plotX + chart.plotLeft - width / 2,
+                                // Right side limit
+                                chart.chartWidth - width - chart.marginRight
+                            )
+                        ),
+                        y: point.plotY
+                    };
+                } else {
+                    position = {
+                        x: point.series.chart.plotLeft,
+                        y: point.series.yAxis.top - chart.plotTop
+                    };
+                }
+
+                return position;
+            }
+        },
+
+        series: [
+          {
+            type:'ohlc',
+            lineWidth: 1,
+            name: '{{ cp.upper() }}',
+            allowPointSelect: true,
+            data: [],
+            marker: {
+              enabled: false
+            },
+          }
+        ],
+        responsive: {
+            rules: [{
+                condition: {
+                    maxWidth: 800
+                },
+                chartOptions: {
+                    rangeSelector: {
+                        inputEnabled: false
+                    }
+                }
+            }]
+        }
+      });
+    {% endfor %}
+  });
+</script>
+{% endblock %}
