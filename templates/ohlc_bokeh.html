@@ -1,0 +1,23 @@
+{% extends 'layouts/main.html' %}
+{% block title %}
+💱 FOREX
+{% endblock %}
+{% block content %}
+<div id="alert" class="alert alert-danger font-weight-light"></div>
+
+{% for cp, div in divs.items() %}
+
+<div id="row_{{ cp }}" class="row pl-3 pb-3">
+
+  <div class="col-12">
+    {{ div|safe }}
+  </div>
+
+</div>
+
+{% endfor %}
+
+{{ script|safe }}
+
+
+{% endblock %}

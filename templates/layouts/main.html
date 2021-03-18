@@ -91,10 +91,10 @@
 
           <li class="nav-item">
 
-            {% if request.path == '/ohlc' %}
-            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('ohlc') }}">ohlc</a>
+            {% if 'ohlc' in request.path %}
+            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('ohlc_highcharts') }}">ohlc</a>
             {% else %}
-            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('ohlc') }}">ohlc</a>
+            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('ohlc_highcharts') }}">ohlc</a>
             {% endif %}
 
           </li>
@@ -132,9 +132,8 @@
     {% block content %}
     {% endblock %}
 
-    {% if "stream" in request.path %}
+    {% if "stream" in request.path or "ohlc" in request.path %}
     <script type="text/javascript">
-
       $(function () {
         $("#switch").change(function() {
           if (window.location.pathname=='/stream_highcharts') {
@@ -145,6 +144,14 @@
             // load the high charts page
             window.location.pathname = 'stream_highcharts';
 
+          } else if (window.location.pathname=='/ohlc_bokeh') {
+            // load the high charts page
+            window.location.pathname = 'ohlc_highcharts';
+
+          } else if (window.location.pathname=='/ohlc_highcharts') {
+            // load the high charts page
+            window.location.pathname = 'ohlc_bokeh';
+
           }
         })
       })
@@ -154,16 +161,16 @@
 
     {% if "stream" in request.path or "ohlc" in request.path %}
     <script>
+    // HIDE THE ALERT BY DEFAULT
+      $("#alert").hide();
       // NAV BAR DROPDOWN OPTIONS - TOGGLE VISIBILITY OF EACH ROW
       {% for cp in currency_pairs.keys() %}
-
       $("#toggle_{{ cp }}").click(function(){
         $("#row_{{ cp }}").toggle('slow');
         $("#toggle_{{ cp }}").toggleClass("font-weight-lighter");
       });
       {% endfor %}
-      // HIDE THE ALERT BY DEFAULT
-      $("#alert").hide();
+
     </script>
     {% endif %}
 

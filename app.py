@@ -11,15 +11,20 @@ from bokeh_plots_builder import BPBuilder
 
 cg_scraper = CGScraper(tables, ohlc_tables, db)
 hc_builder = HCBuilder(tables, ohlc_tables)
-bp_builder = BPBuilder(tables)
+bp_builder = BPBuilder(tables, ohlc_tables, db)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/ohlc')
-def ohlc():
-    return render_template('ohlc.html', currency_pairs=cps)
+@app.route('/ohlc_bokeh')
+def ohlc_bokeh():
+    script, divs = bp_builder.build_ohlc_components()
+    return render_template('ohlc_bokeh.html', divs=divs, script=script, currency_pairs=cps)
+
+@app.route('/ohlc_highcharts')
+def ohlc_highcharts():
+    return render_template('ohlc_highcharts.html', currency_pairs=cps)
 
 @app.route('/ohlc_data')
 def ohlc_data():
