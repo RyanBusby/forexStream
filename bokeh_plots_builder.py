@@ -19,18 +19,13 @@ class BPBuilder():
 		self.ohlc_tables = ohlc_tables
 		self.db = db
 
-	def build_ohlc_components(self):
-		'''
+		self.TOOLS = "pan,box_zoom,reset"
 
-		'''
+	def build_ohlc_components(self):
 		plot_dict = {}
 		for table in self.ohlc_tables:
 			tname = table.__tablename__
 			cp = tname[:6]
-
-			# the date slider is a little glitchy.
-			# better with less data
-			# try filling in missing dates to fix the glitch
 
 			df = pd.read_sql_table(
 			    'audusd_ohlc',
@@ -44,15 +39,6 @@ class BPBuilder():
 			df = df.set_index('timestamp').reindex(r).fillna(np.NaN)
 			df.index = df.index.rename('timestamp')
 
-			# sql =\
-			# f"""select * from {tname} where timestamp > '1/1/2018'"""
-			# df = pd.read_sql(
-			# 	sql,
-			# 	self.db.engine,
-			# 	columns=['timestamp','open', 'high','low','close']
-			# )
-			#
-			# df.set_index('timestamp', drop=True, inplace=True)
 			df['open_inc'],df['high_inc'],df['low_inc'],df['close_inc']=\
 			df['open'],    df['high'],    df['low'],    df['close']
 			df['open_dec'],df['high_dec'],df['low_dec'],df['close_dec']=\
@@ -76,8 +62,18 @@ class BPBuilder():
 
 			plot = figure(
 				x_axis_type="datetime",
-				plot_height=300,
-				plot_width=1300,
+				plot_height=250,
+				plot_width=1400,
+				toolbar_location="above",
+				tools=self.TOOLS,
+				# these didn't do much
+				# sizing_mode='stretch_width',
+				# sizing_mode='stretch_height',
+				# sizing_mode='stretch_both',
+				# sizing_mode='scale_width',
+				# sizing_mode='scale_height',
+				# sizing_mode='scale_both',
+				# sizing_mode='fixed',
 				title=title_dict[cp]
 			)
 			seg = plot.segment(
@@ -121,7 +117,6 @@ class BPBuilder():
 				end=df.index.max(),
 				background='#343a40',
 				bar_color='#f8f9fa',
-				css_classes=['font-weight-light','text-light'],
 				step=86400000
 			)
 
@@ -160,6 +155,7 @@ class BPBuilder():
 			callback = CustomJS(args=args, code=code)
 			date_range_slider.js_on_change("value", callback)
 
+			# NaN's sometimes show up in hover tool
 			hover_tool = HoverTool(
 				tooltips=[
 				# https://docs.bokeh.org/en/latest/docs/reference/models/formatters.html#bokeh.models.formatters.DatetimeTickFormatter
@@ -177,7 +173,7 @@ class BPBuilder():
 					'@{close}': 'printf'
 
 				},
-				renderers=[seg]
+				renderers=[inc_bar,dec_bar]
 			)
 			plot.add_tools(hover_tool)
 			plot.background_fill_color = '#f8f9fa'
@@ -187,6 +183,7 @@ class BPBuilder():
 			plot.yaxis.axis_label_text_color = "#f8f9fa"
 			plot.xaxis.major_label_text_color = "#f8f9fa"
 			plot.yaxis.major_label_text_color = "#f8f9fa"
+			plot.xgrid.visible = False
 			plot.xaxis.formatter = formatters.DatetimeTickFormatter(
 				days="%m/%d/%Y",
 				months = "%m/%d/%Y"
@@ -210,9 +207,11 @@ class BPBuilder():
 			)
 
 			plot = figure(
-				plot_height=250,
-				plot_width=1000,
-				x_axis_type='datetime'
+				plot_height=150,
+				plot_width=1200,
+				x_axis_type='datetime',
+				toolbar_location="above",
+				tools=self.TOOLS,
 			)
 
 			plot.xaxis.formatter = formatters.DatetimeTickFormatter(
@@ -226,7 +225,7 @@ class BPBuilder():
 				milliseconds="%l:%M:%S:%f %P"
 
 			)
-			plot.xaxis.axis_label = "UTC"
+			# plot.xaxis.axis_label = "UTC"
 
 			line = plot.line(
 				'timestamp',
@@ -234,6 +233,12 @@ class BPBuilder():
 				source=source
 			)
 			plot.background_fill_color = '#f8f9fa'
+			plot.border_fill_color = "#343a40"
+			plot.xaxis.axis_label_text_color = "#868e96"
+			plot.yaxis.axis_label_text_color = "#868e96"
+			plot.xaxis.major_label_text_color = "#868e96"
+			plot.yaxis.major_label_text_color = "#868e96"
+			plot.xgrid.visible=False
 
 			hover_tool = HoverTool(
 				tooltips=[
@@ -246,8 +251,7 @@ class BPBuilder():
 					'@{rate}': 'printf'
 				}
 			)
-
-
+			plot.add_tools(hover_tool)
 			callback = CustomJS(
 				args={'line':line, 'source':source, 'cp':cp}, code="""
 				var rates = source.data.rate;

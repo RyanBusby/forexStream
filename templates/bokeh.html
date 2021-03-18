@@ -9,20 +9,21 @@
 
 <div id="row_{{ cp }}" class="row pl-3 pb-3">
 
-  <div class="col-2 bg-light card">
-
-    <div class="card-body">
-      <h2 id="current_{{ cp }}" class="card-text text-center font-weight-lighter pt-4"></h2>
-      <h4 id="delta_{{ cp }}" class="card-text"></h4>
-      <p id="closed_{{ cp }}" class="card-text"></p>
+  <div class="col-1  bg-dark card">
+    <div class="row">
+      <div class="card-body bg-light">
+        <p id="current_{{ cp }}" class="card-text text-center font-weight-lighter"></p>
+        <p id="delta_{{ cp }}" class="card-text"></p>
+        <p id="closed_{{ cp }}" class="card-text"></p>
+      </div>
     </div>
-
-    <div class="card-footer text-center bg-light">
-      <h3 id="footer_{{ cp }}" class="font-weight-lighter">{{ cp.upper() }}</h3>
-    </div>
-
+  <!-- this was a mistake but it ended up working -->
+  <div class="row">
+        <div class="font-weight-lighter text-light text-center">{{ cp.upper() }}
+        </div>
   </div>
 
+  </div>
   <div class="col-10">
     {{ div|safe }}
   </div>
