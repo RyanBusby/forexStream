@@ -30,22 +30,29 @@ class BPBuilder():
 
 			# the date slider is a little glitchy.
 			# better with less data
+			# try filling in missing dates to fix the glitch
 
-			# df = pd.read_sql_table(
-			# 	tname,
+			df = pd.read_sql_table(
+			    'audusd_ohlc',
+			    self.db.engine,
+			    columns=['timestamp','open', 'high','low','close']
+			)
+			df.drop_duplicates(inplace=True)
+			r = pd.date_range(
+			    start=df.timestamp.min(), end=df.timestamp.max()
+			)
+			df = df.set_index('timestamp').reindex(r).fillna(np.NaN)
+			df.index = df.index.rename('timestamp')
+
+			# sql =\
+			# f"""select * from {tname} where timestamp > '1/1/2018'"""
+			# df = pd.read_sql(
+			# 	sql,
 			# 	self.db.engine,
 			# 	columns=['timestamp','open', 'high','low','close']
 			# )
-
-			sql =\
-			f"""select * from {tname} where timestamp > '1/1/2019'"""
-			df = pd.read_sql(
-				sql,
-				self.db.engine,
-				columns=['timestamp','open', 'high','low','close']
-			)
-
-			df.set_index('timestamp', drop=True, inplace=True)
+			#
+			# df.set_index('timestamp', drop=True, inplace=True)
 			df['open_inc'],df['high_inc'],df['low_inc'],df['close_inc']=\
 			df['open'],    df['high'],    df['low'],    df['close']
 			df['open_dec'],df['high_dec'],df['low_dec'],df['close_dec']=\
@@ -101,15 +108,20 @@ class BPBuilder():
 			)
 
 			date_range_slider = DateRangeSlider(
+				# width=400,
+				align='center',
+				margin=(25,50,5,50),
+				# format="%x",
+				format="%B %e, %Y",
 				value=(
-					df.index.min().date(),
-					df.index.max().date()
+					df.index.min(),
+					df.index.max()
 				),
-				start=df.index.min().date(),
-				end=df.index.max().date(),
-				# background='#f8f9fa',
-				# bar_color='#f8f9fa',
-				css_classes=['font-weight-lighter','bg-light'],
+				start=df.index.min(),
+				end=df.index.max(),
+				background='#343a40',
+				bar_color='#f8f9fa',
+				css_classes=['font-weight-light','text-light'],
 				step=86400000
 			)
 
@@ -127,14 +139,6 @@ class BPBuilder():
 
 			var from_pos = data_ref['timestamp'].indexOf(to_date);
 			var to_pos = data_ref['timestamp'].indexOf(from_date);
-
-			if (from_pos == -1) {
-			// ADD TWO DAYS TO 'FROM' IF SLIDER LANDS ON SAT OR SUN
-			var from_pos = data_ref['timestamp'].indexOf(to_date+48*60*60*1000);
-			} else if (to_pos == -1) {
-			// SUBTRACT TWO DAYS FROM 'TO' IF SLIDER LANDS ON SAT OR SUN
-			var to_pos = data_ref['timestamp'].indexOf(to_date-48*60*60*1000);
-			}
 
 			data['timestamp'] = data_ref['timestamp'].slice(to_pos,from_pos);
 
@@ -154,7 +158,6 @@ class BPBuilder():
 			source.change.emit();
 			"""
 			callback = CustomJS(args=args, code=code)
-
 			date_range_slider.js_on_change("value", callback)
 
 			hover_tool = HoverTool(
@@ -176,15 +179,20 @@ class BPBuilder():
 				},
 				renderers=[seg]
 			)
-			crosshair_tool = CrosshairTool(
-				dimensions='width',
-				line_color='blue'
-			)
-			plot.add_tools(crosshair_tool)
 			plot.add_tools(hover_tool)
 			plot.background_fill_color = '#f8f9fa'
+			plot.border_fill_color = "#343a40"
+			plot.title.text_color = "#f8f9fa"
+			plot.xaxis.axis_label_text_color = "#f8f9fa"
+			plot.yaxis.axis_label_text_color = "#f8f9fa"
+			plot.xaxis.major_label_text_color = "#f8f9fa"
+			plot.yaxis.major_label_text_color = "#f8f9fa"
+			plot.xaxis.formatter = formatters.DatetimeTickFormatter(
+				days="%m/%d/%Y",
+				months = "%m/%d/%Y"
+			)
 			# plot.background_fill_color = '#868e96'
-			plot_dict[cp] = column(date_range_slider, plot)
+			plot_dict[cp] = column(plot, date_range_slider)
 
 
 		return components(plot_dict)
