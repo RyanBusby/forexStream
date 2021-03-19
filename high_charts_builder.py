@@ -3,7 +3,8 @@ import requests
 import datetime as dt
 from datetime import timedelta, timezone
 from dateutil.relativedelta import relativedelta, FR
-from time import mktime
+
+import pandas as pd
 
 from market_dicts import market_ids, price_types
 
@@ -11,11 +12,50 @@ class HCBuilder():
     '''
     DataHandler queries the the db and builds response objects for high charts.
     '''
-    def __init__(self, tables, ohlc_tables, minutes=30):
+    def __init__(self, tables, ohlc_tables, db, minutes=30):
         self.tables = tables
         # self.tick_tables = tick_tables
         self.ohlc_tables = ohlc_tables
         self.minutes = minutes
+        self.db = db
+
+    def build_returns_response(self):
+        response = {}
+        cols = ['timestamp','close']
+        for table in self.ohlc_tables:
+            cp = table.__tablename__
+            price_type = price_types[cp[:6]]
+            '''
+            direct markets:
+                return = t1 quote / t0 quote
+
+            indirect markets:
+                return  = t0 quote / t1 quote
+
+            to make this more accurate (account for spread)
+
+            direct markets:
+                return = t1 ask / t0 buy
+
+            indirect markets:
+                return = t0 buy / t1 ask
+            '''
+            if price_type == 'BID':
+                period = -1
+            elif price_type == 'ASK':
+                period = 1
+            df = pd.read_sql_table(cp, self.db.engine, columns=cols)\
+                .set_index('timestamp', drop=True)
+            df = df.pct_change(period)
+            df['close'] = df['close']*100
+            df.dropna(inplace=True)
+            df['t'] = df.index
+            df['t'] = df['t'].apply(
+                lambda x: int(x.timestamp()*1000)
+            )
+            df = df[['t','close']].values.tolist()
+            response[cp[:6]] = {'data': df}
+        return response
 
     def build_ohlc_response(self, is_closed):
         response = {}
@@ -58,7 +98,7 @@ class HCBuilder():
             if is_closed:
                 five_after = self.last_ts+timedelta(minutes=5)
                 table_data.append(
-                    [mktime(five_after.timetuple())*1000, last_val]
+                    [int(five_after.timestamp()*1000), last_val]
                 )
             response[table.__tablename__] = {
                 'data': table_data,
@@ -68,4 +108,5 @@ class HCBuilder():
             }
         response['closed'] = is_closed
         response['choice'] = 'highcharts'
+        input(type(response))
         return response

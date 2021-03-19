@@ -10,12 +10,21 @@ from high_charts_builder import HCBuilder
 from bokeh_plots_builder import BPBuilder
 
 cg_scraper = CGScraper(tables, ohlc_tables, db)
-hc_builder = HCBuilder(tables, ohlc_tables)
+hc_builder = HCBuilder(tables, ohlc_tables, db)
 bp_builder = BPBuilder(tables, ohlc_tables, db)
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/returns')
+def returns():
+    return render_template('returns.html', currency_pairs=cps)
+
+@app.route('/returns_data')
+def returns_data():
+    response = hc_builder.build_returns_response()
+    return jsonify(response)
 
 @app.route('/ohlc_bokeh')
 def ohlc_bokeh():
@@ -47,7 +56,8 @@ def data():
     now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
     is_closed = closed(now)
     response = hc_builder.build_response(is_closed)
-    return jsonify(response)
+    hcdata = jsonify(response)
+    return hcdata
 
 @app.route("/ajax_data/<tname>/<int:cutoff>", methods=['POST', "GET"])
 def get_data(tname, cutoff):
