@@ -1,0 +1,146 @@
+{% extends 'layouts/main.html' %}
+{% block content %}
+
+{% for cp in currency_pairs %}
+<div class="row pl-3 pb-3">
+  <div id="multi_line"  class="col-12"></div>
+</div>
+{% endfor %}
+
+<script type="text/javascript">
+
+var chart;
+
+function request_data() {
+
+  var requests = $.get('/data/returns');
+
+  requests.done(
+    function (result) {
+    {% for cp in currency_pairs %}
+      chart.series[{{ loop.index-1 }}].setData(result.{{ cp }}.data);
+    {% endfor %}
+  }
+);
+}
+request_data();
+Highcharts.setOptions({
+    colors: ['#2f7ed8', '#0d233a', '#8bbc21', '#910000', '#1aadce',
+        '#492970', '#f28f43', '#77a1e5', '#c42525', '#a6c96a']
+});
+
+$(document).ready(
+  function () {
+    chart = new Highcharts.Chart(
+      {
+        chart: {
+          height: 500,
+          // height:150,
+          backgroundColor: '#f8f9fa',
+          renderTo: 'multi_line',
+          zoomType: 'x'
+        },
+        title: {
+          text: 'Daily Returns Going Back 3 Years'
+        },
+
+        xAxis: {
+          title: {
+            enabled: true,
+          },
+
+          type: 'datetime',
+          labels: {
+            style: {
+              fontSize: 14
+            }
+          }
+        },
+
+        yAxis: {
+          title: {
+            text: '%',
+          },
+          gridLineColor: 'darkgray',
+          gridLineWidth: .5,
+          labels: {
+            enabled: true,
+            style: {
+              fontSize: 10
+            }
+          }
+        },
+        plotOptions: {
+          series: {
+            marker: {
+              enabled: false
+            }
+          }
+        },
+        tooltip: {
+            shape: 'square',
+            headerShape: 'callout',
+            borderWidth: 0,
+            shadow: false,
+            backgroundColor: '#343a40',
+            style: {
+              color: 'white'
+            },
+            positioner: function (width, height, point) {
+                var chart = this.chart,
+                    position;
+
+                if (point.isHeader) {
+                    position = {
+                        x: Math.max(
+                            // Left side limit
+                            chart.plotLeft,
+                            Math.min(
+                                point.plotX + chart.plotLeft - width / 2,
+                                // Right side limit
+                                chart.chartWidth - width - chart.marginRight
+                            )
+                        ),
+                        y: point.plotY
+                    };
+                } else {
+                    position = {
+                        x: point.series.chart.plotLeft,
+                        y: point.series.yAxis.top - chart.plotTop
+                    };
+                }
+
+                return position;
+            }
+        },
+        series: [
+        {% for cp in currency_pairs.keys() %}
+          {
+            lineWidth: 2,
+            lineColor: Highcharts.getOptions()
+            .colors[{{ loop.index-1 }}],
+            name: '{{ cp.upper() }}',
+            data: [],
+            marker: {
+              enabled: false
+            },
+          },
+      {% endfor %}
+        ],
+        responsive: {
+            rules: [{
+                condition: {
+                    maxWidth: 800
+                },
+                chartOptions: {
+                    rangeSelector: {
+                        inputEnabled: false
+                    }
+                }
+            }]
+        }
+      });
+  });
+
+</script>
+{% endblock %}

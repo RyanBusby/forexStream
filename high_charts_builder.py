@@ -46,6 +46,8 @@ class HCBuilder():
                 period = 1
             df = pd.read_sql_table(cp, self.db.engine, columns=cols)\
                 .set_index('timestamp', drop=True)
+            three_years_ago = dt.datetime.now() - timedelta(days=365*3)
+            df = df[df.index >= three_years_ago] # include range selector
             df = df.pct_change(period)
             df['close'] = df['close']*100
             df.dropna(inplace=True)
@@ -108,5 +110,4 @@ class HCBuilder():
             }
         response['closed'] = is_closed
         response['choice'] = 'highcharts'
-        input(type(response))
         return response

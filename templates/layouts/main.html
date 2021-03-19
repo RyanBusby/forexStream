@@ -107,15 +107,16 @@
           <li class="nav-item">
 
             {% if 'returns' in request.path %}
-            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('returns') }}">returns</a>
+            <a class="font-weight-lighter text-success nav-link" href="{{ url_for('returns_highcharts') }}">returns</a>
             {% else %}
-            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('returns') }}">returns</a>
+            <a class="font-weight-lighter text-dark nav-link" href="{{ url_for('returns_highcharts') }}">returns</a>
             {% endif %}
 
           </li>
 
     </ul>
-          <!-- NAV DROPDOWN -->
+
+    <!-- NAV DROPDOWN TOGGLE OHLC OR STREAM ROWS-->
     {% if "stream" in request.path or "ohlc" in request.path %}
         <ul class="navbar-nav ml-auto">
           <li class="nav-item dropdown dropleft">
@@ -127,18 +128,25 @@
               {% endfor %}
             </div>
           </li>
-      {% endif %}
-
-      {% if "highcharts" in request.path %}
-          <li class="pl-4">
-            <input id="switch" class="form-check-input" type="checkbox" data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success" checked>
-          </li>
-      {% elif "bokeh" in request.path %}
-          <li class="pl-4">
-            <input id="switch" class="form-check-input" type="checkbox" data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success">
-          </li>
         </ul>
-      {% endif %}
+    {% endif %}
+
+
+
+    {% if "highcharts" in request.path %}
+      <ul class="navbar-nav ml-auto">
+      <li class="pl-4">
+      <input id="switch" class="form-check-input" type="checkbox" data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success" checked>
+      </li>
+    {% endif %}
+
+    {% if "bokeh" in request.path %}
+      <ul class="navbar-nav ml-auto">
+      <li class="pl-4">
+      <input id="switch" class="form-check-input" type="checkbox" data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success">
+      </li>
+      </ul>
+    {% endif %}
     </nav>
 
     <!-- CONTENT -->
@@ -147,25 +155,33 @@
     {% block content %}
     {% endblock %}
 
-    {% if "stream" in request.path or "ohlc" in request.path %}
+    {% if "bokeh" in request.path or "highcharts" in request.path %}
     <script type="text/javascript">
       $(function () {
         $("#switch").change(function() {
-          if (window.location.pathname=='/stream_highcharts') {
+          if (window.location.pathname=='/stream-highcharts') {
             // load the bokeh page
-            window.location.pathname = 'stream_bokeh';
+            window.location.pathname = 'stream-bokeh';
 
-          } else if (window.location.pathname=='/stream_bokeh') {
+          } else if (window.location.pathname=='/stream-bokeh') {
             // load the high charts page
-            window.location.pathname = 'stream_highcharts';
+            window.location.pathname = 'stream-highcharts';
 
-          } else if (window.location.pathname=='/ohlc_bokeh') {
+          } else if (window.location.pathname=='/ohlc-bokeh') {
             // load the high charts page
-            window.location.pathname = 'ohlc_highcharts';
+            window.location.pathname = 'ohlc-highcharts';
 
-          } else if (window.location.pathname=='/ohlc_highcharts') {
+          } else if (window.location.pathname=='/ohlc-highcharts') {
             // load the high charts page
-            window.location.pathname = 'ohlc_bokeh';
+            window.location.pathname = 'ohlc-bokeh';
+
+          } else if (window.location.pathname=='/returns-bokeh') {
+            // load the high charts page
+            window.location.pathname = 'returns-highcharts';
+
+          } else if (window.location.pathname=='/returns-highcharts') {
+            // load the high charts page
+            window.location.pathname = 'returns-bokeh';
 
           }
         })

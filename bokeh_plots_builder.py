@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 from bokeh.plotting import figure
 from bokeh.embed import components
-from bokeh.models import AjaxDataSource, ColumnDataSource, HoverTool, CrosshairTool, formatters, CustomJS, DateRangeSlider
+from bokeh.models import AjaxDataSource, ColumnDataSource, HoverTool, CrosshairTool, formatters, CustomJS, DateRangeSlider, Plot,  Grid, LinearAxis, MultiLine
 from bokeh.layouts import column
 
-from market_dicts import title_dict
+from market_dicts import title_dict, price_types
 
 class BPBuilder():
 	def __init__(self, tables, ohlc_tables, db, minutes=30):
@@ -21,6 +21,77 @@ class BPBuilder():
 
 		self.TOOLS = "pan,box_zoom,reset"
 
+	def build_returns_components(self):
+		# xs, ys, color, label = [], [], [], []
+		colors = [
+			'#2f7ed8', '#0d233a', '#8bbc21', '#910000', '#1aadce',\
+			'#492970', '#f28f43', '#77a1e5', '#c42525', '#a6c96a'
+		]
+
+		plot = figure(
+			plot_height=500,
+			plot_width=1250,
+			x_axis_type='datetime',
+			toolbar_location="above",
+			tools=self.TOOLS,
+			title='Daily Returns Going Back 3 Years'
+		)
+		for i, table in enumerate(self.ohlc_tables):
+			cp = table.__tablename__
+			price_type = price_types[cp[:6]]
+			'''
+			direct markets:
+				return = t1 quote / t0 quote
+
+			indirect markets:
+				return  = t0 quote / t1 quote
+
+			to make this more accurate (account for spread)
+
+			direct markets:
+				return = t1 ask / t0 buy
+
+			indirect markets:
+				return = t0 buy / t1 ask
+			'''
+			if price_type == 'BID':
+				period = -1
+			elif price_type == 'ASK':
+				period = 1
+			cols = ['timestamp', 'close']
+			df = pd.read_sql_table(cp, self.db.engine, columns=cols)\
+				.set_index('timestamp', drop=True)
+			three_years_ago = dt.datetime.now() - timedelta(days=365*3)
+			df = df[df.index >= three_years_ago] # include range selector
+			df.drop_duplicates(inplace=True)
+			df = df.pct_change(period)
+			df['close'] = df['close']*100
+			df.dropna(inplace=True)
+			x = (
+				np.array(
+					df.index.values.tolist()
+				) / 1000000
+			).astype(int).tolist()
+			y = df.close.values.tolist()
+			plot.line(
+				x,
+				y,
+				line_color=colors[i],
+				legend_label=cp[:6].upper()
+			)
+		plot.legend.location = "top_left"
+		plot.legend.click_policy="hide"
+		plot.title.text_color = "#f8f9fa"
+		plot.background_fill_color = '#f8f9fa'
+		plot.border_fill_color = "#343a40"
+		plot.xaxis.axis_label_text_color = "#868e96"
+		plot.yaxis.axis_label_text_color = "#868e96"
+		plot.xaxis.major_label_text_color = "#868e96"
+		plot.yaxis.major_label_text_color = "#868e96"
+		plot.xgrid.visible=False
+		return components(plot)
+
+
 	def build_ohlc_components(self):
 		plot_dict = {}
 		for table in self.ohlc_tables:
@@ -28,13 +99,13 @@ class BPBuilder():
 			cp = tname[:6]
 
 			df = pd.read_sql_table(
-			    'audusd_ohlc',
-			    self.db.engine,
-			    columns=['timestamp','open', 'high','low','close']
+				tname,
+				self.db.engine,
+				columns=['timestamp','open', 'high','low','close']
 			)
 			df.drop_duplicates(inplace=True)
 			r = pd.date_range(
-			    start=df.timestamp.min(), end=df.timestamp.max()
+				start=df.timestamp.min(), end=df.timestamp.max()
 			)
 			df = df.set_index('timestamp').reindex(r).fillna(np.NaN)
 			df.index = df.index.rename('timestamp')
@@ -199,7 +270,7 @@ class BPBuilder():
 		plot_dict = {}
 		for table in self.tables:
 			cp = table.__tablename__
-			url =f"http://localhost:5000/ajax_data/{cp}/{self.minutes}"
+			url =f"http://localhost:5000/data/{cp}/{self.minutes}"
 			source = AjaxDataSource(
 				data_url=url,
 				polling_interval=1000,
