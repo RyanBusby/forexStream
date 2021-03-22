@@ -266,17 +266,24 @@ class BPBuilder():
 		return components(plot_dict)
 
 
-	def build_components(self):
+	def build_components(self, is_closed):
 		plot_dict = {}
 		for table in self.tables:
 			cp = table.__tablename__
 			url =f"http://localhost:5000/data/{cp}/{self.minutes}"
-			source = AjaxDataSource(
-				data_url=url,
-				polling_interval=1000,
-				mode='replace'
-			)
-
+			if is_closed:
+				# don't really need to use ajax
+				source = AjaxDataSource(
+					data_url=url,
+					polling_interval=1000*60*60*48, # 2 days
+					mode='replace'
+				)
+			else:
+				source = AjaxDataSource(
+					data_url=url,
+					polling_interval=1000,
+					mode='replace'
+				)
 			plot = figure(
 				plot_height=150,
 				plot_width=1200,

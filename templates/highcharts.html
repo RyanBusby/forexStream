@@ -31,7 +31,8 @@
 
 
 <script type="text/javascript">
-
+  // HIDE THE ALERT BY DEFAULT
+    $("#alert").hide();
   // init all charts
   {% for cp in currency_pairs.keys() %}
     var chart_{{ cp }};
@@ -95,7 +96,7 @@
   }
 
   request_data();
-  interval = setInterval(request_data, 500)
+  chartdata = setInterval(request_data, 500)
 
   $(document).ready(
 

@@ -1,6 +1,7 @@
 import threading
 import datetime as dt
 from datetime import timezone, timedelta
+from dateutil.relativedelta import relativedelta, FR
 
 from flask import render_template, jsonify
 
@@ -23,8 +24,9 @@ def stream_highcharts():
 
 @app.route('/stream-bokeh')
 def stream_bokeh():
-    script, divs = bp_builder.build_components()
-    return render_template('bokeh.html', divs=divs, script=script, currency_pairs=cps)
+    is_closed = closed(dt.datetime.now(tz=timezone.utc))
+    script, divs = bp_builder.build_components(is_closed)
+    return render_template('bokeh.html', divs=divs, script=script, currency_pairs=cps, is_closed=is_closed)
 
 @app.route('/ohlc-highcharts')
 def ohlc_highcharts():
@@ -63,7 +65,14 @@ def data(type):
 @app.route("/data/<tname>/<int:cutoff>", methods=['POST'])
 def get_data(tname, cutoff):
     table = tnames[tname]
-    n_minutes_ago = dt.datetime.now() - timedelta(minutes=cutoff)
+    now = dt.datetime.now(tz=timezone.utc).replace(microsecond=0)
+    is_closed = closed(now)
+    if is_closed == False:
+        n_minutes_ago = dt.datetime.now() - timedelta(minutes=cutoff)
+    else:
+        cutoff = now.replace(tzinfo=None) + relativedelta(weekday=FR(-1))
+        n_minutes_ago =\
+        cutoff.replace(hour=14,minute=30,second=0,microsecond=0)
     rows = table.query\
         .filter(table.timestamp > n_minutes_ago)\
         .order_by(table.timestamp)\

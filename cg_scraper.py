@@ -28,6 +28,8 @@ class CGScraper():
 	def loadbars(self, now, is_closed):
 		# get latest date in db.
 		# if not yesterday, get bars between the latest day and yesterday
+		# there's really no need to loop this.
+		# simply get as much as possible and insert it.
 		for table in self.ohlc_tables:
 			# cp is currencypair
 			cp = table.__tablename__[:6]
@@ -52,56 +54,56 @@ class CGScraper():
 
 			# TODO!: forex market is also closed on christmas and new year's day, work in logic for that
 
-			while True:
-				latest_local_ts = table.query\
-				.order_by(
-					table.timestamp.desc()
-				)\
-				.first()
+			# while True:
+			latest_local_ts = table.query\
+			.order_by(
+				table.timestamp.desc()
+			)\
+			.first()
 
-				if latest_local_ts is None:
-					latest = dt.datetime(1970,1,1)
+			if latest_local_ts is None:
+				latest = dt.datetime(1970,1,1)
 
-				# you can avoid all this converting back and forth if you just load the db with either tz unaware utc times or straight up timestamps
+			# you can avoid all this converting back and forth if you just load the db with either tz unaware utc times or straight up timestamps
 
-				else:
-					latest = latest_local_ts.timestamp\
-					.replace(hour=0,minute=0,second=0,microsecond=0)
-				yesterday = yesterday.replace(tzinfo=None)
+			else:
+				latest = latest_local_ts.timestamp\
+				.replace(hour=0,minute=0,second=0,microsecond=0)
+			yesterday = yesterday.replace(tzinfo=None)
 
-				if latest == yesterday:
-					break
-				# use yesterday to not get a partial bar
-				latest_ts = int(latest.timestamp())
-				yesterday_ts = int(yesterday.timestamp())
-				market_id = market_ids[cp]
-				price_type = price_types[cp]
-				bars, status_code = self.get_bars_between(
-					latest_ts,
-					yesterday_ts,
-					market_id,
-					price_type
+			if latest == yesterday:
+				break
+			# use yesterday to not get a partial bar
+			latest_ts = int(latest.timestamp())
+			yesterday_ts = int(yesterday.timestamp())
+			market_id = market_ids[cp]
+			price_type = price_types[cp]
+			bars, status_code = self.get_bars_between(
+				latest_ts,
+				yesterday_ts,
+				market_id,
+				price_type
+			)
+			self.check_error(bars, status_code)
+			rows = []
+			for bar in bars['PriceBars']:
+				date = self.convert_wcf_notz(
+					int(bar['BarDate'][6:-2])
 				)
-				self.check_error(bars, status_code)
-				rows = []
-				for bar in bars['PriceBars']:
-					date = self.convert_wcf_notz(
-						int(bar['BarDate'][6:-2])
-					)
-					open_ = bar['Open']
-					high = bar['High']
-					low = bar['Low']
-					close = bar['Close']
-					row = table(
-						timestamp=date,
-						open=open_,
-						high=high,
-						low=low,
-						close=close
-					)
-					rows.append(row)
-				self.db.session.add_all(rows)
-				self.db.session.commit()
+				open_ = bar['Open']
+				high = bar['High']
+				low = bar['Low']
+				close = bar['Close']
+				row = table(
+					timestamp=date,
+					open=open_,
+					high=high,
+					low=low,
+					close=close
+				)
+				rows.append(row)
+			self.db.session.add_all(rows)
+			self.db.session.commit()
 
 
 	def get_bars_between(self,latest, yesterday, market_id, price_type):
@@ -123,12 +125,17 @@ class CGScraper():
 		return response, r.status_code
 
 	def loadticks(self, now, is_closed):
+		'''
+		tz info back and forth is too much, clean that up
+		'''
+		now = now.replace(tzinfo=None)
 		if is_closed:
 			m = int(59 - self.minutes)
 			cutoff = (now + relativedelta(weekday=FR(-1)))\
 				.replace(hour=14, minute=m, second=55)
 		else:
 			cutoff = now - timedelta(minutes=self.minutes)
+			cutoff = cutoff.replace(tzinfo=None)
 		for table in self.tables:
 			tname = table.__tablename__
 			market_id = market_ids[tname]
@@ -140,11 +147,14 @@ class CGScraper():
 				is_current, latest_ts = self.db_is_current(table, cutoff)
 				if is_current:
 					break
-				# leave while loop, continue for loop
+					# leave while loop, continue for loop
 				if cutoff < latest_ts < now:
 					l_ts = int(latest_ts.timestamp())
 				elif latest_ts < cutoff:
-					l_ts = int(cutoff.timestamp())
+					# l_ts = int(cutoff.timestamp())
+					l_ts = int(
+					(dt.datetime.now()-timedelta(minutes=self.minutes)
+					).timestamp())
 				ticks, status_code = self.get_ticks_after(
 					market_id,
 					l_ts,
@@ -211,15 +221,12 @@ class CGScraper():
 
 	def db_is_current(self, table, cutoff):
 		self.last_ts = cutoff+timedelta(minutes=self.minutes)
-		# timestamp will be an ineger
 		latest_ts = table.query\
 			.order_by(table.timestamp.desc())\
 			.first()
 		if latest_ts is None:
 			return False, dt.datetime(1970,1,1,tzinfo=timezone.utc)
-		latest_ts = dt.datetime.fromtimestamp(
-			latest_ts.timestamp.timestamp(), tz=timezone.utc
-		)
+		latest_ts = latest_ts.timestamp
 		if latest_ts >= self.last_ts:
 			return True, latest_ts
 		else:

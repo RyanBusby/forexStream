@@ -3,7 +3,6 @@
 💱 FOREX
 {% endblock %}
 {% block content %}
-<div id="alert" class="alert alert-danger font-weight-light"></div>
 {% for cp in currency_pairs.keys() %}
 
   <div id="row_{{ cp }}" class="row pl-3 pb-3">
@@ -16,7 +15,6 @@
 
 
 <script type="text/javascript">
-
   // init all charts
   {% for cp in currency_pairs.keys() %}
     var chart_{{ cp }};
@@ -31,7 +29,6 @@
       function (result) {
         if (result.closed) {
           console.log('market closed')
-          clearInterval(chartdata);
           $("#alert")
             .html("Forex Trading is available 24 hours a day from 10:00 PM UTC Sunday to 9:00 PM UTC on Friday. Charts aren\'t live.")
             .show();

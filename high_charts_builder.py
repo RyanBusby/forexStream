@@ -83,13 +83,19 @@ class HCBuilder():
         # get the latest entries
         response = {}
         cutoff = dt.datetime.now() - timedelta(minutes=self.minutes)
+        if is_closed:
+             cutoff = dt.datetime.now() + relativedelta(weekday=FR(-1))
+             cutoff =\
+             cutoff.replace(hour=14,minute=30,second=0,microsecond=0)
         for table in self.tables:
             rows = table.query\
                 .filter(table.timestamp > cutoff)\
                 .order_by(table.timestamp)\
                 .all()
             table_data = []
-            for row in rows:
+            for x, row in enumerate(rows):
+                if x == len(rows)-1:
+                    last_ts = row.timestamp
                 table_data.append(
                     [row.timestamp.timestamp()*1000, row.rate]
                 )
@@ -98,7 +104,7 @@ class HCBuilder():
             delta = abs(round(last_val - first_val, 5))
             increasing = last_val > first_val
             if is_closed:
-                five_after = self.last_ts+timedelta(minutes=5)
+                five_after = last_ts+timedelta(minutes=5)
                 table_data.append(
                     [int(five_after.timestamp()*1000), last_val]
                 )

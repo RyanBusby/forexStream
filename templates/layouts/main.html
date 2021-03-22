@@ -117,8 +117,9 @@
     </ul>
 
     <!-- NAV DROPDOWN TOGGLE OHLC OR STREAM ROWS-->
+    <ul class="navbar-nav ml-auto">
     {% if "stream" in request.path or "ohlc" in request.path %}
-        <ul class="navbar-nav ml-auto">
+
           <li class="nav-item dropdown dropleft">
             <!-- WITHOUT INERT HREF YOU HAVE TO STYLE THE CURSOR -->
             <a class="nav-link dropdown-toggle font-weight-lighter text-dark" data-toggle="dropdown" href="#">toggle charts</a>
@@ -128,13 +129,11 @@
               {% endfor %}
             </div>
           </li>
-        </ul>
     {% endif %}
 
 
 
     {% if "highcharts" in request.path %}
-      <ul class="navbar-nav ml-auto">
       <li class="pl-4">
       <input id="switch" class="form-check-input" type="checkbox" data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success" checked>
       </li>
@@ -145,8 +144,8 @@
       <li class="pl-4">
       <input id="switch" class="form-check-input" type="checkbox" data-toggle="toggle" data-on="Highcharts" data-off="Bokeh" data-onstyle="info" data-offstyle="success">
       </li>
-      </ul>
     {% endif %}
+    </ul>
     </nav>
 
     <!-- CONTENT -->
@@ -192,8 +191,7 @@
 
     {% if "stream" in request.path or "ohlc" in request.path %}
     <script>
-    // HIDE THE ALERT BY DEFAULT
-      $("#alert").hide();
+
       // NAV BAR DROPDOWN OPTIONS - TOGGLE VISIBILITY OF EACH ROW
       {% for cp in currency_pairs.keys() %}
       $("#toggle_{{ cp }}").click(function(){
