@@ -155,6 +155,8 @@ class CGScraper():
 					l_ts = int(
 					(dt.datetime.now()-timedelta(minutes=self.minutes)
 					).timestamp())
+					if is_closed: # enough already
+						l_ts = int(cutoff.timestamp())
 				ticks, status_code = self.get_ticks_after(
 					market_id,
 					l_ts,
